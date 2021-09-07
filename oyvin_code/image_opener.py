@@ -18,9 +18,13 @@ import PIL.Image as Image
 
 np.set_printoptions(precision=2, suppress=True)
 affine_transform = tio.RandomAffine()
+
+"Need to specify the local path on computer"
 dir_path = 'Task3/sub-101/'
 affine = None
 imgs = []
+
+"Loads images from the folder sub-101"
 for img in os.listdir(dir_path):
     if (img == '.DS_Store'):
         continue
@@ -32,7 +36,7 @@ for img in os.listdir(dir_path):
 loader = DataLoader(imgs, batch_size=2)   
 
 
-
+"Simple neural network with one convolution and activation"
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
