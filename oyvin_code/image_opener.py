@@ -16,12 +16,9 @@ import PIL
 import PIL.Image as Image
 
 
-np.set_printoptions(precision=2, suppress=True)
-affine_transform = tio.RandomAffine()
 
 "Need to specify the local path on computer"
-dir_path = 'Task3/sub-101/'
-affine = None
+dir_path = '../Task3/sub-101/'
 imgs = []
 
 "Loads images from the folder sub-101"
@@ -29,11 +26,23 @@ for img in os.listdir(dir_path):
     if (img == '.DS_Store'):
         continue
     else:
-        img = tio.ScalarImage(dir_path + img)
-        affine = img.affine
-        print(type(img.data))
-        imgs.append(img)
-loader = DataLoader(imgs, batch_size=2)   
+        tmp = nib.load(dir_path + img)  
+        tmp_arr = tmp.get_fdata()
+        x = np.expand_dims(tmp_arr, axis=0)
+        print(x[0][100][100][100])
+        print(x.shape)
+        imgs.append(x)
+loader = DataLoader(imgs, batch_size=2)  
+
+
+
+def show_slices(slices):
+   """ Function to display row of image slices """
+   fig, axes = plt.subplots(1, len(slices))
+   for i, slice in enumerate(slices):
+       axes[i].imshow(slice.T, cmap="gray", origin="lower")
+
+
 
 
 "Simple neural network with one convolution and activation"
@@ -42,7 +51,8 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
 
         self.conv1 = self._conv_layer_set(1, 32)
-
+        self.conv2 = self._conv_layer_set(32,64)
+        
     def _conv_layer_set(self, in_c, out_c):
             conv_layer = nn.Sequential(
             nn.Conv3d(in_c, out_c, 1),
@@ -51,17 +61,31 @@ class CNN(nn.Module):
             return conv_layer
 
     def forward(self, x):
+        x = x.float()
         print('1st convolution')
         out = self.conv1(x)
+        print(out.shape)
+        out=self.conv2(out)
         return out
+
+
 
 model = CNN()
 print(len(loader))
-test = next(iter(loader))
-print(test['data'].shape)
-out = model(test['data'])
-print(out[0][0].shape)
-out_img = out[0][0].detach().numpy()
+dataiter = iter(loader)
+test = dataiter.next()
+test.float()
+print('Test shape:', test.shape)   
 
-ni_img = nib.Nifti1Image(out_img, affine)
-nib.save(ni_img, 'out.nii.gz')
+
+out = model(test)
+print(out.shape)
+
+
+
+slice_0 = test[0][0][50, :, :]
+slice_1 = test[0][0][:, 89, :]
+slice_2 = test[0][0][:, :, 130]
+show_slices([slice_0, slice_1, slice_2])
+plt.suptitle("Center slices for EPI image") 
+plt.show()
