@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import torchio as tio
 
 def show_slices(slices):
    """ Function to display row of image slices """
@@ -43,3 +44,11 @@ def crop_images_to_brain(data_set):
         data_set[i]['data'], data_set[i]['seg'] = data_set[i]['data'][resizer], data_set[i]['seg'][resizer]
         print(data_set[i]['data'].shape)
     return data_set
+
+def crop_to_size(set, size):
+    for i in range(len(set)):
+        transform = tio.CropOrPad((size))
+        set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
+        print(set[i]['data'].shape)
+        print(set[i]['seg'].shape)
+    return set
