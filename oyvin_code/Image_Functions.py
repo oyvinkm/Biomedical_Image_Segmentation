@@ -6,7 +6,7 @@ def show_slices(slices):
    """ Function to display row of image slices """
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, cmap="gray", origin="lower")
+       axes[i].imshow(slice.T, cmap="OrRd", origin="lower")
 def slicing(img):
     slice_0 = img[100, :, :]
     slice_1 = img[:, 150, :]
