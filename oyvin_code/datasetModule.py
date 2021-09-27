@@ -35,7 +35,8 @@ class Set(Dataset):
             img_seg.append((tmp))
         sample['data'] = torch.from_numpy(np.array(img_data))
         sample['seg'] = torch.from_numpy(np.array(img_seg))
-        
+        img_seg.clear()
+        img_data.clear()
         return sample
     def __len__(self):
         return len(self.sub_folders)       
