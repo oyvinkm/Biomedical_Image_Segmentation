@@ -1,11 +1,12 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import torchio as tio
 
 def show_slices(slices):
    """ Function to display row of image slices """
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, cmap="gray", origin="lower")
+       axes[i].imshow(slice.T, cmap="OrRd", origin="lower")
 def slicing(img):
     slice_0 = img[100, :, :]
     slice_1 = img[:, 150, :]
@@ -38,8 +39,12 @@ def crop_images_to_brain(data_set):
         if (new_size[2][1] - new_size[2][0] < min_x): min_x = new_size[2][1] - new_size[2][0]
         data_set[i]['data'], data_set[i]['seg'] = cropped_img, cropped_seg
     resizer = (slice(0,3),slice(0, min_z), slice(0, min_y), slice(0, min_x))
-    print(len(data_set))
     for i in range(len(data_set)):
         data_set[i]['data'], data_set[i]['seg'] = data_set[i]['data'][resizer], data_set[i]['seg'][resizer]
-        print(data_set[i]['data'].shape)
     return data_set
+
+def crop_to_size(set, size):
+    for i in range(len(set)):
+        transform = tio.CropOrPad((size))
+        set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
+    return set
