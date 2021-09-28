@@ -38,5 +38,9 @@ class Set(Dataset):
         img_seg.clear()
         img_data.clear()
         return sample
+
+    
     def __len__(self):
         return len(self.sub_folders)       
+
+
