@@ -82,14 +82,14 @@ class CNN(nn.Module):
         #layer 1
         out = self.aske1_layer1(out)
         out = self.aske1_layer2(out)
-        print('Layer 1:' , out.shape)
+        print('Layer 1: ', out.shape)
         skips.append(out)
         out = self.askpool(out)
 
         #layer 2
         out = self.aske2_layer1(out)
         out = self.aske2_layer2(out)
-        print('layer 2= ', out.shape)
+        print('Layer 2: ', out.shape)
         out = self.aske_upconv1(out)
 
         #layer 3
