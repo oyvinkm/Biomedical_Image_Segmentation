@@ -10,9 +10,7 @@ from sklearn.model_selection import train_test_split
 from Image_Functions import slicing, crop_images_to_brain, crop_to_size
 from datasetModule import Set
 from torch import nn
-import matplotlib.pyplot as plt
 import Model
-import tensorflow as tf
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -106,6 +104,12 @@ img = img.detach().numpy()
 for imgur in image[0]:
     slicing(imgur)
 #slicing(img)
+
+
+# In[6]:
+
+
+get_ipython().system('jupyter nbconvert --to script *.ipynb')
 
 
 # In[ ]:
