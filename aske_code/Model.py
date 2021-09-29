@@ -25,7 +25,7 @@ class CNN(nn.Module):
         #decode layer
         self.aske3_layer1 = self._conv_layer_set(self.base_features*2 + self.base_features, self.base_features)
         self.aske3_layer2 = self._conv_layer_set(self.base_features, self.base_features)
-        self.aske3_layer3 = self._conv_layer_set(self.base_features, 2)
+        self.aske3_layer3 = self._conv_layer_set(self.base_features, 1)
 
         
 
