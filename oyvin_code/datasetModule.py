@@ -35,6 +35,7 @@ class Set(Dataset):
             img_seg.append((tmp))
         sample['data'] = torch.from_numpy(np.array(img_data))
         sample['seg'] = torch.from_numpy(np.array(img_seg))
+        sample['seg'] = sample['seg'][0].add(sample['seg'][1]).unsqueeze(0)
         img_seg.clear()
         img_data.clear()
         return sample
