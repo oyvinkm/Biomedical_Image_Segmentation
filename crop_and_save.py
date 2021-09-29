@@ -77,6 +77,7 @@ class Crop_And_Save():
                 image = nib.load(os.path.join(path, elm))
                 img_data = image.get_fdata()
                 max_pre = img_data.max()
+                print('Max Value: Segmentation: ', max_pre)
                 img_data = img_data[new_size]
                 max_post = img_data.max()
                 assert max_pre == max_post, print('Data Lost when cropping Segmentation image: %s' % elm)
