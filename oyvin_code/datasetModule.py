@@ -33,10 +33,14 @@ class Set(Dataset):
             npy_data = nib.load(os.path.join(path,elm))
             tmp = npy_data.get_fdata()
             img_seg.append((tmp))
+        img_seg = np.maximum(img_seg[0], img_seg[1])
+        print(img_seg.shape)
         sample['data'] = torch.from_numpy(np.array(img_data))
-        sample['seg'] = torch.from_numpy(np.array(img_seg))
-        sample['seg'] = sample['seg'][0].add(sample['seg'][1]).unsqueeze(0)
-        img_seg.clear()
+        sample['seg'] = torch.from_numpy(np.array(img_seg)).unsqueeze(0)
+        
+        print('segmentation shape: ', sample['seg'].shape)
+        #sample['seg'] = sample['seg'][0].add(sample['seg'][0]).unsqueeze(0).float()
+        #img_seg.clear()
         img_data.clear()
         return sample
 
