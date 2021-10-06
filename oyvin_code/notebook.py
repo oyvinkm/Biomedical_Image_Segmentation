@@ -44,7 +44,7 @@ n_total_steps = len(train_loader)
 loss_func_2 = DiceLoss()
 
 losses = []
-for epoch in range(2):
+for epoch in range(num_epochs):
     for i, image_set in enumerate(train_loader):
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)
@@ -71,7 +71,7 @@ print(losses)
 test_pred = iter(test_loader)
 test_img = test_pred.next()
 
-prediction = model(test_img)
+prediction = model(test_img['data'])
 
 slicing(prediction, 100, 150, 80)
 
