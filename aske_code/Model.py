@@ -12,6 +12,8 @@ class CNN(nn.Module):
         self.upconv = nn.ConvTranspose3d
         self.askconv = nn.ConvTranspose3d
 
+
+        self.test_layer = self._conv_layer_set(self.in_channels,1)
         #Aske test network
         #Layer encode 
         self.aske1_layer1 = self._conv_layer_set(self.in_channels, 16)
@@ -70,6 +72,7 @@ class CNN(nn.Module):
     def _conv_layer_set(self, feat_in, feat_out):
             conv_layer = nn.Sequential(
             nn.Conv3d(feat_in, feat_out, kernel_size = 3, stride=1, padding=1),
+            nn.BatchNorm3d(feat_out),
             nn.LeakyReLU(),
             )
             return conv_layer
@@ -78,25 +81,29 @@ class CNN(nn.Module):
         """Aske test forward"""
         out = x.float()
         skips = []
+        test = 1
 
         #layer 1
-        out = self.aske1_layer1(out)
-        out = self.aske1_layer2(out)
-        print('Layer 1: ', out.shape)
-        skips.append(out)
-        out = self.askpool(out)
+        if test == 0:
+            out = self.aske1_layer1(out)
+            out = self.aske1_layer2(out)
+            print('Layer 1: ', out.shape)
+            skips.append(out)
+            out = self.askpool(out)
 
-        #layer 2
-        out = self.aske2_layer1(out)
-        out = self.aske2_layer2(out)
-        print('Layer 2: ', out.shape)
-        out = self.aske_upconv1(out)
+            #layer 2
+            out = self.aske2_layer1(out)
+            out = self.aske2_layer2(out)
+            print('Layer 2: ', out.shape)
+            out = self.aske_upconv1(out)
 
-        #layer 3
-        out = torch.cat((skips.pop(), out), dim=1)
-        out = self.aske3_layer1(out)
-        out = self.aske3_layer2(out)
-        out = self.aske3_layer3(out)
+            #layer 3
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.aske3_layer1(out)
+            out = self.aske3_layer2(out)
+            out = self.aske3_layer3(out)
+        else:
+            out = self.test_layer(out)
         print("Final = ", out.shape)
 
         return out

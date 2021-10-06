@@ -33,10 +33,12 @@ class Set(Dataset):
             npy_data = nib.load(os.path.join(path,elm))
             tmp = npy_data.get_fdata()
             img_seg.append((tmp))
-        sample['data'] = torch.from_numpy(np.array(img_data))
-        sample['seg'] = torch.from_numpy(np.array(img_seg))
-        sample['seg'] = sample['seg'][0].unsqueeze(0)#.add(sample['seg'][1]).unsqueeze(0)
-        sample['seg'] = sample['seg'].type(torch.FloatTensor)
+        sample['data'] = torch.from_numpy(np.array(img_data))#.type(torch.DoubleTensor)
+        sample['seg'] = torch.from_numpy(np.array(img_seg)).type(torch.LongTensor)[0]
+        #One has to unsqueeze regardless of lossfunction
+        sample['seg'] = sample['seg'].unsqueeze(0)#.add(sample['seg'][1]).unsqueeze(0)
+        print("!!!ONLY 1/2 SEGMENTATION IS USED!!!")
+        #sample['seg'] = sample['seg'].type(torch.LongTensor)
         img_seg.clear()
         img_data.clear()
         return sample
