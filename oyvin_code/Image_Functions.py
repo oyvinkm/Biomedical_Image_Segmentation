@@ -6,11 +6,11 @@ def show_slices(slices):
    """ Function to display row of image slices """
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, cmap="OrRd", origin="lower")
-def slicing(img):
-    slice_0 = img[100, :, :]
-    slice_1 = img[:, 150, :]
-    slice_2 = img[:, :, 80]
+       axes[i].imshow(slice.T, origin="lower")
+def slicing(img, x,y,z):
+    slice_0 = img[x, :, :]
+    slice_1 = img[:, y, :]
+    slice_2 = img[:, :, z]
     show_slices([slice_0, slice_1, slice_2])
     plt.suptitle("Center slices for EPI image") 
     plt.show()

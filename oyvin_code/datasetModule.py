@@ -37,10 +37,7 @@ class Set(Dataset):
         print(img_seg.shape)
         sample['data'] = torch.from_numpy(np.array(img_data))
         sample['seg'] = torch.from_numpy(np.array(img_seg)).unsqueeze(0)
-        
         print('segmentation shape: ', sample['seg'].shape)
-        #sample['seg'] = sample['seg'][0].add(sample['seg'][0]).unsqueeze(0).float()
-        #img_seg.clear()
         img_data.clear()
         return sample
 

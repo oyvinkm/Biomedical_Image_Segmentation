@@ -7,14 +7,12 @@ class DiceLoss(nn.Module):
 
 
     def forward(self, inputs, targets, smooth=1):
-        print(inputs.shape)
         inputs = torch.sigmoid(inputs)
-        print(inputs.max())
         inputs = inputs.view(-1)
         
         targets = targets.view(-1)
 
         intersection = (inputs*targets).sum()
-        dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
+        dice = (2.*intersection + smooth)/(inputs.sum()**2 + targets.sum()**2 + smooth)
 
         return 1 - dice

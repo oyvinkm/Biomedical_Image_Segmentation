@@ -3,7 +3,7 @@ from torch import nn
 
 "Simple neural network with one convolution and activation"
 class CNN(nn.Module):
-    def __init__(self, in_channels, parameters = None, base_features = 32):
+    def __init__(self, in_channels, parameters = None, base_features = 16):
         super(CNN, self).__init__()
         self.in_channels =  in_channels
         self.base_features = 32
@@ -14,7 +14,7 @@ class CNN(nn.Module):
 
         #Aske test network
         #Layer encode 
-        self.aske1_layer1 = self._conv_layer_set(self.in_channels, 1)
+        self.aske1_layer1 = self._conv_layer_set(self.in_channels, 8)
         self.aske1_layer2 = self._conv_layer_set(8, self.base_features)
         
         #bottom layer
@@ -81,7 +81,7 @@ class CNN(nn.Module):
 
         #layer 1
         out = self.aske1_layer1(out)
-        """ out = self.aske1_layer2(out)
+        out = self.aske1_layer2(out)
         print('Layer 1: ', out.shape)
         skips.append(out)
         out = self.askpool(out)
@@ -96,7 +96,7 @@ class CNN(nn.Module):
         out = torch.cat((skips.pop(), out), dim=1)
         out = self.aske3_layer1(out)
         out = self.aske3_layer2(out)
-        out = self.aske3_layer3(out) """
+        out = self.aske3_layer3(out)
         print("Final = ", out.shape)
 
         return out

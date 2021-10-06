@@ -5,7 +5,7 @@ from torch import nn
 
 "Simple neural network with one convolution and activation"
 class CNN(nn.Module):
-    def __init__(self, in_channels, parameters, base_features = 32):
+    def __init__(self, in_channels, parameters = None, base_features = 32):
         super(CNN, self).__init__()
         self.in_channels =  in_channels
         self.base_features = 32
