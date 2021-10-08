@@ -37,7 +37,7 @@ class Set(Dataset):
         sample['seg'] = torch.from_numpy(np.array(img_seg)).type(torch.LongTensor)[0]
         #One has to unsqueeze regardless of lossfunction
         sample['seg'] = sample['seg'].unsqueeze(0)#.add(sample['seg'][1]).unsqueeze(0)
-        print("!!!ONLY 1/2 SEGMENTATION IS USED!!!")
+        #print("!!!ONLY 1/2 SEGMENTATION IS USED!!!")
         #sample['seg'] = sample['seg'].type(torch.LongTensor)
         img_seg.clear()
         img_data.clear()
