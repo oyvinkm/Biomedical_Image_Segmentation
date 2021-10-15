@@ -58,7 +58,7 @@ def crop_img_seg(data, seg=None, outside=-1):
     return data, seg, bbox
 
 
-def make_new_folder(self, folder):
+def make_new_folder(folder):
         try:
             os.mkdir(os.path.join('../../', folder))
         except:
@@ -71,7 +71,7 @@ class ImageCropper(object):
         self.output_folder = output_folder
         self.num_threads = num_threads
         if self.output_folder is not None:
-            make_new_folder(output_folder)
+            make_new_folder(self.output_folder)
 
     @staticmethod
     def crop(data, props, seg=None):

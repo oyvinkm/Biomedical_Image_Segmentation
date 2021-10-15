@@ -57,10 +57,8 @@ class Set(Dataset):
         img_seg = [sitk.ReadImage(os.path.join(path, f)) for f in seg]
         img_seg = np.vstack(img_seg)
         img_seg = np.maximum(img_seg[0], img_seg[1])
-        print(img_seg.shape)
         sample['data'] = torch.from_numpy(np.array(img_data))
         sample['seg'] = torch.from_numpy(np.array(img_seg)).unsqueeze(0)
-        print('segmentation shape: ', sample['seg'].shape)
         img_data.clear()
         return sample
 

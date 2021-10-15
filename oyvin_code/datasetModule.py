@@ -3,6 +3,7 @@ import torch
 import os
 import numpy as np
 from torch.utils.data import DataLoader, Dataset
+from preprocessing.preprocessing import run_preprocessing
 
 
 class Set(Dataset):
@@ -23,24 +24,16 @@ class Set(Dataset):
         print(path)
         data, seg = self.get_folder_content(index)
         sample = {}
-        img_data = []
-        img_seg = []
-        for elm in data:
-            npy_data = nib.load(os.path.join(path,elm))
-            tmp = npy_data.get_fdata()
-            img_data.append(tmp)
-        for elm in seg:
-            npy_data = nib.load(os.path.join(path,elm))
-            tmp = npy_data.get_fdata()
-            img_seg.append((tmp))
+        img_data = [nib.load(os.path.join(path,elm)).get_fdata() for elm in data]
+        img_seg =  [nib.load(os.path.join(path,elm)).get_fdata() for elm in seg]
         img_seg = np.maximum(img_seg[0], img_seg[1])
-        print(img_seg.shape)
-        sample['data'] = torch.from_numpy(np.array(img_data))
-        sample['seg'] = torch.from_numpy(np.array(img_seg)).unsqueeze(0)
-        print('segmentation shape: ', sample['seg'].shape)
-        img_data.clear()
+        sample['data'] = np.array(img_data)
+        sample['seg'] = np.expand_dims(np.array(img_seg), axis=0)
+        print(sample['seg'].shape)
+        sample['key'] = self.sub_folders[index]
+        img_data = None
+        img_seg = None
         return sample
-
     
     def __len__(self):
         return len(self.sub_folders)       

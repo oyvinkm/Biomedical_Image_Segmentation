@@ -3,14 +3,44 @@ import numpy as np
 from numpy.core.fromnumeric import reshape
 from skimage.transform import resize
 from scipy.ndimage.interpolation import map_coordinates
+import nibabel as nib
+import SimpleITK as sitk
+import os
+from multiprocessing.pool import Pool
 
 
 def get_do_separate_z(spacing, anisotropy_threshold):
     do_seperate_z = (np.max(spacing)/np.min(spacing)) > anisotropy_threshold
+    return do_seperate_z
 
 def get_lowres_axis(new_spacing):
-    axis = np.where(max(new_spacing)/np.min(new_spacing) == 0)[0]
+    axis = np.where(max(new_spacing)/np.array(new_spacing) == 1)[0]
     return axis
+
+def load_case_from_list_of_files(data_files, path, seg_file=None):
+    assert isinstance(data_files, list) or isinstance(data_files, tuple), "case must be either a list or a tuple"
+    properties = OrderedDict()
+    affine = nib.load(os.path.join(path, data_files[0])).affine
+    data_itk = [sitk.ReadImage(os.path.join(path,f)) for f in data_files]
+    properties["original_size_of_raw_data"] = np.array(data_itk[0].GetSize())
+    properties["original_spacing"] = np.array(data_itk[0].GetSpacing())
+    properties["list_of_data_files"] = data_files
+    properties["seg_file"] = seg_file
+    properties["affine"] = affine
+    affine = None
+    properties["itk_origin"] = data_itk[0].GetOrigin()
+    properties["itk_spacing"] = data_itk[0].GetSpacing()
+    properties["itk_direction"] = data_itk[0].GetDirection()
+
+    data_npy = np.vstack([sitk.GetArrayFromImage(d)[None] for d in data_itk])
+    if seg_file is not None:
+        seg_itk = [sitk.ReadImage(os.path.join(path,f)) for f in seg_file]
+        seg_npy =  np.vstack([sitk.GetArrayFromImage(d)[None] for d in seg_itk])
+    else:
+        seg_npy = None
+    return data_npy.astype(np.float32), seg_npy.astype(np.float32), properties
+
+
 
 
 def do_separate_axis(original_spacing, target_spacing, anisotropy_treshold):
@@ -56,7 +86,6 @@ def resample_data_seg(data, new_shape, is_seg = False, axis=None, order=3, do_se
                 new_shape_2d = new_shape[:-1]
 
             reshaped_final_data = []
-
             for c in range(data.shape[0]):
                 reshaped_data = []
                 for slice_id in range(shape[axis]):
@@ -94,8 +123,8 @@ def resample_data_seg(data, new_shape, is_seg = False, axis=None, order=3, do_se
                                                 mode='nearest'))
                             reshaped[reshaped_multihot > 0.5] = cl
                         reshaped_final_data.append(reshaped[None])
-            else:
-                reshaped_final_data.append(reshaped_data[None])
+                else:
+                    reshaped_final_data.append(reshaped_data[None])
             reshaped_final_data = np.vstack(reshaped_final_data)
         
         else:
@@ -108,4 +137,22 @@ def resample_data_seg(data, new_shape, is_seg = False, axis=None, order=3, do_se
     else:
         print('no resampling necessary')
         return data
+
+def run_preprocessing(data, seg, path, comp_seg = True):
+    data_stor, seg_stor, properties = load_case_from_list_of_files(data, path, seg)
+    shape = data_stor[0].shape
+    new_shape = np.array([128, 128, 128])
+    target_spacing = ((shape / new_shape).astype(float) * properties['original_spacing']) 
+    do_seperate_z, axis = do_separate_axis(properties['original_spacing'], target_spacing, anisotropy_treshold=1)
+    print(1)
+    new_data = resample_data_seg(data_stor, new_shape, is_seg=False, axis=axis, order=2, do_seperate_z= do_seperate_z, order_z = 3)
+    print(2)
+    new_seg = resample_data_seg(seg_stor, new_shape, is_seg=False, axis=axis, order=2, do_seperate_z=do_seperate_z, order_z=3)
+    print(3)
+    if comp_seg:
+        assert len(new_seg)  == 2, 'Can only compress segmentation with two channels'
+        assert new_seg[0].shape == new_seg[1].shape, 'Segmentation channels needs to have the same shape'
+        new_seg = np.maximum(new_seg[0], new_seg[1])
+    print(4)
+    return new_data, new_seg
 

@@ -2,16 +2,16 @@ from matplotlib import pyplot as plt
 import numpy as np
 import torchio as tio
 
-def show_slices(slices):
+def show_slices(slices, color = 'gray'):
    """ Function to display row of image slices """
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, origin="lower")
-def slicing(img, x,y,z):
+       axes[i].imshow(slice.T, cmap=color, origin="lower")
+def slicing(img, x,y,z, cmap = 'gray'):
     slice_0 = img[x, :, :]
     slice_1 = img[:, y, :]
     slice_2 = img[:, :, z]
-    show_slices([slice_0, slice_1, slice_2])
+    show_slices([slice_0, slice_1, slice_2], color = cmap)
     plt.suptitle("Center slices for EPI image") 
     plt.show()
 
