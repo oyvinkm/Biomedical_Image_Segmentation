@@ -12,9 +12,10 @@ import torch.nn as nn
 from matplotlib import pyplot as plt
 
 #hyper parameters
-batch_size = 2
+batch_size = 8
 learning_rate = 0.01
-num_epochs = 4
+num_epochs = 50
+base_features = 8
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -29,16 +30,16 @@ def save_image(data, affine):
     nib.save(cropped_img, "test.nii.gz")
 
 'Splitting the data into 30% test and 70% training.'
-dir_path = os.path.join(os.getcwd(), "Biomedical_Image_Segmentation\Cropped_Task3")
-X_train, X_test = train_test_split(Set(dir_path, sub_dir = 'crop_sub-23'), test_size=0.3, random_state=25)
+dir_path = os.path.join(os.getcwd(), "Biomedical_Image_Segmentation/Cropped_Task3")
+X_train, X_test = train_test_split(Set(dir_path, sub_dir = 'crop_sub-2'), test_size=0.3, random_state=25)
 size = (256,288,176)
 X_train, X_test = crop_to_size(X_train, size), crop_to_size(X_test,size)
 
 'Load training and test set, batch size may vary'
-train_loader, test_loader = DataLoader(X_train, batch_size=1), DataLoader(X_test, batch_size=1)
+train_loader, test_loader = DataLoader(X_train, batch_size=batch_size), DataLoader(X_test, batch_size=1)
 
 'Run the CNN'
-model = CNN(3,base_features=4)
+model = CNN(3,base_features=base_features)
 model = nn.DataParallel(model)
 model.to(device)
 
