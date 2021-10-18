@@ -8,27 +8,24 @@ import torch
 
 class DataLoader3D(DataLoaderBase):
 
-    def __init__(self, data, patch_size, final_patch_size, BATCH_SIZE, num_batches,
-                pad_mode = 'edge',  pad_kwargs_data = None, pad_sides = None):
+    def __init__(self, data, patch_size, BATCH_SIZE, 
+                pad_mode = 'edge',  pad_kwargs_data = None, pad_sides = None, to_tensor = True):
         
         super(DataLoader3D, self).__init__(data, BATCH_SIZE, None)
         if pad_kwargs_data is None:
             pad_kwargs_data = OrderedDict
         self.pad_kwargs_data = pad_kwargs_data
         self.pad_mode = pad_mode
-        self.final_patch_size = final_patch_size
         self.patch_size = patch_size
         self.data = data
         self.data_len = self.get_data_length()
         self.keys = self.get_keys()
-        self.need_to_pad = (np.array(patch_size) - np.array(final_patch_size)).astype(int)
         if pad_sides is not None:
             if not isinstance(pad_sides, np.ndarray):
                 pad_sides = np.array(pad_sides)
             self.need_to_pad += pad_sides
         self.data_shape, self.seg_shape = self.determine_shapes()
-        self.batches_made = 0
-        self.num_batches = num_batches
+        self.to_tensor = to_tensor
 
     def get_seg_position(self, indx):
         seg_pos = np.where(self._data[indx]['seg'][0] != 0)
@@ -144,8 +141,9 @@ class DataLoader3D(DataLoaderBase):
                 data[i] = cropped_data
                 cropped_seg = self._data[self.keys[j]]['seg'][resizer_seg]
                 seg[i] = cropped_seg
-        #data = torch.from_numpy(data)
-        #seg = torch.from_numpy(seg)
+        if self.to_tensor:
+            data = torch.from_numpy(data)
+            seg = torch.from_numpy(seg)
         return {'data' : data, 'seg' : seg, 'keys' : selected_index}
 
     
