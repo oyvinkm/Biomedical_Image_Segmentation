@@ -21,7 +21,6 @@ class Set(Dataset):
         
     def __getitem__(self, index):
         path = os.path.join(self.data_path, self.sub_folders[index])
-        print(path)
         data, seg = self.get_folder_content(index)
         sample = {}
         img_data = [nib.load(os.path.join(path,elm)).get_fdata() for elm in data]
@@ -29,7 +28,6 @@ class Set(Dataset):
         img_seg = np.maximum(img_seg[0], img_seg[1])
         sample['data'] = np.array(img_data)
         sample['seg'] = np.expand_dims(np.array(img_seg), axis=0)
-        print(sample['seg'].shape)
         sample['key'] = self.sub_folders[index]
         img_data = None
         img_seg = None

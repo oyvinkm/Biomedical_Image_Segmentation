@@ -68,18 +68,19 @@ class DataLoader3D(DataLoaderBase):
                 assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
                 return lb, ub
         else:
-            padder = self.patch_size[axis] - (max - min)
-            new_min = min - padder
-            new_max = max + padder
-            cut_min, cut_max = new_min < 0, new_max > shape
+            padder = (self.patch_size[axis] - (max - min))//2
+            new_min, new_max = min - padder, max + padder
+            cut_min, cut_max = new_min < 0, new_max > shape[axis]
+            if new_max - new_min != self.patch_size[axis]:
+                new_max += self.patch_size[axis] - (new_max - new_min)
             if cut_min:
                 lb = 0
                 ub = new_max + np.abs(min - padder)
                 assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
                 return lb, ub
             elif cut_max:
-                ub = new_min - (new_max - shape[axis])
-                lb = shape[axis]
+                lb = new_min - (new_max - shape[axis])
+                ub = shape[axis]
                 assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb)  
                 return lb, ub
             else:
@@ -120,9 +121,9 @@ class DataLoader3D(DataLoaderBase):
                     lb_z, ub_z = self.get_bbox_axis(min_x , max_x, data_shape, 2, partial_patch=crop_choice)
                 else:
                     data_shape = self._data[self.keys[j]]['data'][0].shape
-                    lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0, partial_patch=crop_choice)
-                    lb_y, ub_y = self.get_bbox_axis(min_x , max_x, data_shape, 1, partial_patch=crop_choice)
-                    lb_z, ub_z = self.get_bbox_axis(min_x , max_x, data_shape, 2, partial_patch=crop_choice)
+                    lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0)
+                    lb_y, ub_y = self.get_bbox_axis(min_x , max_x, data_shape, 1)
+                    lb_z, ub_z = self.get_bbox_axis(min_x , max_x, data_shape, 2)
                 resizer_data = (slice(0,3),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
                 resizer_seg = (slice(0,1),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
                 cropped_data = self._data[self.keys[j]]['data'][resizer_data]
@@ -143,9 +144,8 @@ class DataLoader3D(DataLoaderBase):
                 data[i] = cropped_data
                 cropped_seg = self._data[self.keys[j]]['seg'][resizer_seg]
                 seg[i] = cropped_seg
-        data = torch.from_numpy(data)
-        seg = torch.from_numpy(seg)
-        self.batches_made += 1
+        #data = torch.from_numpy(data)
+        #seg = torch.from_numpy(seg)
         return {'data' : data, 'seg' : seg, 'keys' : selected_index}
 
     
