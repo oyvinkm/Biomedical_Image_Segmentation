@@ -25,18 +25,24 @@ path = os.path.join(data_path,folder)
 training, test = train_test_split(Set(data_path, sub_dir=folder), test_size=0.1, random_state=25)
 
 #print(training.shape)
-
+num_batches = 5
 
 loaded = DataLoader3D(training, (128,128,128), (128,128,128), 2, 10)
+for epoch in range(5):
+    print('epoch: ', epoch)
+    for i, set in enumerate(loaded):
+        print(i)
+        print(set['keys'])
+        print(set['data'][0].shape)
+        if i >= num_batches:
+            break
 
 
-
-test_img = next(iter(loaded))
-print(test_img.keys())
-noise_test = AddGaussianNoise(test_img)
-
-print(test_img['data'][0].shape)
-print(noise_test['data'][0].shape)
+#print(test_img.keys())
+#noise_test = 
+ 
+#print(test_img['data'][0].shape)
+#print(noise_test['data'][0].shape)
 #slicing(test_img['data'][0])
 
 #slicing(noise_test['data'][0])

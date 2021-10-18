@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from Image_Functions import slicing, crop_images_to_brain, crop_to_size
-from datasetModule import Set
+from preprocessing.datasetModule import Set
 from Model import CNN
 from Dice_Loss import DiceLoss
 import torch
