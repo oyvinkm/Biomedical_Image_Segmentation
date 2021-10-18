@@ -27,6 +27,8 @@ class DataLoader3D(DataLoaderBase):
                 pad_sides = np.array(pad_sides)
             self.need_to_pad += pad_sides
         self.data_shape, self.seg_shape = self.determine_shapes()
+        self.batches_made = 0
+        self.num_batches = num_batches
 
     def get_seg_position(self, indx):
         seg_pos = np.where(self._data[indx]['seg'][0] != 0)
@@ -143,6 +145,7 @@ class DataLoader3D(DataLoaderBase):
                 seg[i] = cropped_seg
         data = torch.from_numpy(data)
         seg = torch.from_numpy(seg)
+        self.batches_made += 1
         return {'data' : data, 'seg' : seg, 'keys' : selected_index}
 
     

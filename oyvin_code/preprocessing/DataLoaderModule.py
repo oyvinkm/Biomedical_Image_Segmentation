@@ -37,7 +37,6 @@ class DataLoaderBase(object):
         return self
 
     def __next__(self):
-        
         return self.generate_train_batch()
 
     @abstractmethod
