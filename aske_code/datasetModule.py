@@ -3,6 +3,7 @@ import torch
 import os
 import numpy as np
 from torch.utils.data import DataLoader, Dataset
+from preprocessing.preprocessing import run_preprocessing
 
 
 class Set(Dataset):
@@ -20,27 +21,20 @@ class Set(Dataset):
         
     def __getitem__(self, index):
         path = os.path.join(self.data_path, self.sub_folders[index])
-        print(path)
         data, seg = self.get_folder_content(index)
         sample = {}
-        img_data = []
-        img_seg = []
-        for elm in data:
-            npy_data = nib.load(os.path.join(path,elm))
-            tmp = npy_data.get_fdata()
-            img_data.append(tmp)
-        for elm in seg:
-            npy_data = nib.load(os.path.join(path,elm))
-            tmp = npy_data.get_fdata()
-            img_seg.append((tmp))
-        sample['data'] = torch.from_numpy(np.array(img_data))#.type(torch.DoubleTensor)
-        sample['seg'] = torch.from_numpy(np.array(img_seg)).type(torch.LongTensor)[0]
-        #One has to unsqueeze regardless of lossfunction
-        sample['seg'] = sample['seg'].unsqueeze(0)#.add(sample['seg'][1]).unsqueeze(0)
-        #print("!!!ONLY 1/2 SEGMENTATION IS USED!!!")
-        #sample['seg'] = sample['seg'].type(torch.LongTensor)
-        img_seg.clear()
-        img_data.clear()
+        img_data = [nib.load(os.path.join(path,elm)).get_fdata() for elm in data]
+        img_seg =  [nib.load(os.path.join(path,elm)).get_fdata() for elm in seg]
+        img_seg = np.maximum(img_seg[0], img_seg[1])
+        sample['data'] = np.array(img_data)
+        sample['seg'] = np.expand_dims(np.array(img_seg), axis=0)
+        sample['key'] = self.sub_folders[index]
+        img_data = None
+        img_seg = None
         return sample
+    
     def __len__(self):
         return len(self.sub_folders)       
+
+
+  

@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import torchio as tio
+import nibabel as nib
 
 def show_slices(slices):
    """ Function to display row of image slices """
@@ -48,3 +49,7 @@ def crop_to_size(set, size):
         transform = tio.CropOrPad((size))
         set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
     return set
+
+def save_image(data, affine):
+    cropped_img = nib.Nifti1Image(data, affine)
+    nib.save(cropped_img, "test.nii.gz")

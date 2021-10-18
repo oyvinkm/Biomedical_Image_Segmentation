@@ -77,8 +77,9 @@ class CNN(nn.Module):
             )
             return conv_layer
 
-    def forward(self, x):
-        """Aske test forward"""
+    """def forward(self, x):
+        print("Doing aske test")
+        Aske test forward
         out = x.float()
         skips = []
         test = 1
@@ -106,9 +107,9 @@ class CNN(nn.Module):
             out = self.test_layer(out)
         print("Final = ", out.shape)
 
-        return out
+        return out"""
 
-""" Original forward
+#Original forward
     def forward(self, x):
         out = x.float()
         skips = []
@@ -163,4 +164,4 @@ class CNN(nn.Module):
 
         #Final
         out = self.final_conv(out)
-        return out"""
+        return out

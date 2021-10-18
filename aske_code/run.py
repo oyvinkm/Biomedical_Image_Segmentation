@@ -1,9 +1,9 @@
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
-from Image_Functions import slicing, crop_images_to_brain, crop_to_size
+from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image
 from datasetModule import Set
-from Model import CNN
-from Dice_Loss import DiceLoss
+from model import CNN
+from loss import DiceLoss, WeightedTverskyLoss
 import torch
 import os
 from datetime import datetime
@@ -22,11 +22,7 @@ print(device)
 "Need to specify the local path on computer"
 test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation')
 print(test_path)
-test_imgur = nib.load(os.path.join(test_path, "Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
-
-def save_image(data, affine):
-    cropped_img = nib.Nifti1Image(data, affine)
-    nib.save(cropped_img, "test.nii.gz")
+test_imgur = nib.load(os.path.join(test_path, "Cropped_Task3\crop_sub-233\crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
 
 'Splitting the data into 30% test and 70% training.'
 dir_path = os.path.join(os.getcwd(), "Biomedical_Image_Segmentation\Cropped_Task3")
@@ -63,9 +59,6 @@ for epoch in range(num_epochs):
 plt.plot(losses)
 plt.savefig('Losses')
 print(losses)
-
-test_pred = iter(test_loader)
-test_img = test_pred.next()
 
 prediction = model(test_img['data'].to(device))
 
