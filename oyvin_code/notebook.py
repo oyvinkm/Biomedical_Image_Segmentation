@@ -14,7 +14,7 @@ from preprocessing.DataLoader3D import DataLoader3D
 #hyper parameters
 batch_size = 8
 learning_rate = 0.01
-num_epochs = 50
+num_epochs = 10
 base_features = 8
 patch_size = (128,128,128)
 
