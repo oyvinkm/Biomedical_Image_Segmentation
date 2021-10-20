@@ -34,6 +34,6 @@ class WeightedTverskyLoss(nn.Module):
         p1 = 1 - input #probability that voxel is a non-lacune
         g0 = target #1 if voxel is a lacune, 0 if voxel is a non-lacune
         g1 = abs(target - 1) #0 if voxel is a lacune, 1 if voxel is a non-lacune
-        loss = ((p0*g0).sum())/((p0*g0).sum()+self.alpha*((p0*g1).sum()) + self.beta*((p1*g0).sum()))
+        loss = ((input*(target)).sum())/((input*(target)).sum()+self.alpha*((input*abs(target - 1)).sum()) + self.beta*(((1-input)*(target)).sum()))
 
         return 1 - loss
