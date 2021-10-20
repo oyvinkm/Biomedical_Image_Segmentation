@@ -58,8 +58,8 @@ class CNN(nn.Module):
 
     def _conv_layer_set(self, feat_in, feat_out):
             conv_layer = nn.Sequential(
-            nn.Conv3d(feat_in, feat_out, kernel_size = 3, stride=1, padding=1),
-            nn.LeakyReLU(),
+            nn.Conv3d(feat_in, feat_out, kernel_size = 3, stride=1, padding=1), nn.BatchNorm3d(feat_out),
+            nn.LeakyReLU()
             )
             return conv_layer
 
