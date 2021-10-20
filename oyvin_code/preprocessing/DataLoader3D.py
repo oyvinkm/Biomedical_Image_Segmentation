@@ -1,4 +1,5 @@
 from numpy.ma.core import empty
+from torch._C import device
 from preprocessing.DataLoaderModule import DataLoaderBase
 from collections import OrderedDict
 import numpy as np
@@ -8,8 +9,8 @@ import torch
 
 class DataLoader3D(DataLoaderBase):
 
-    def __init__(self, data, patch_size, BATCH_SIZE, 
-                pad_mode = 'edge',  pad_kwargs_data = None, pad_sides = None, to_tensor = True):
+    def __init__(self, data, patch_size, BATCH_SIZE, device, pad_mode = 'edge',  
+                    pad_kwargs_data = None, pad_sides = None, to_tensor = True):
         
         super(DataLoader3D, self).__init__(data, BATCH_SIZE, None)
         if pad_kwargs_data is None:
@@ -26,6 +27,7 @@ class DataLoader3D(DataLoaderBase):
             self.need_to_pad += pad_sides
         self.data_shape, self.seg_shape = self.determine_shapes()
         self.to_tensor = to_tensor
+        self.device = device
 
     def get_seg_position(self, indx):
         seg_pos = np.where(self._data[indx]['seg'][0] != 0)

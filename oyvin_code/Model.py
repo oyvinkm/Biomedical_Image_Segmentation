@@ -1,6 +1,6 @@
 import torch 
 from torch import nn
-import torchvision.transforms.functional as TF
+
 
 
 
@@ -160,33 +160,21 @@ class CNN(nn.Module):
         out = self.upconv1(out)
 
         #Decode Layer 1
-        c = torch.cat((skips.pop(), out), dim=1)
-        if (out.shape != c.shape):
-            out = TF.resize(x, size = c.shape[2:])
-        out = torch.cat((c, out), dim=1)
-        c = None
+        out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv5_layer1(out)
         out = self.conv5_layer2(out)
         print('Layer 5:' , out.shape)
         out = self.upconv2(out)
         
         #Decode Layer 2
-        c = torch.cat((skips.pop(), out), dim=1)
-        if (out.shape != c.shape):
-            out = TF.resize(x, size = c.shape[2:])
-        out = torch.cat((c, out), dim=1)
-        c = None
+        out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv6_layer1(out)
         out = self.conv6_layer2(out)
         print('Layer 6:' , out.shape)
         out = self.upconv3(out)
 
         #Decode Layer 3
-        c = torch.cat((skips.pop(), out), dim=1)
-        if (out.shape != c.shape):
-            out = TF.resize(x, size = c.shape[2:])
-        out = torch.cat((c, out), dim=1)
-        c = None
+        out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv7_layer1(out)
         out = self.conv7_layer2(out)
         print('Layer 7:' , out.shape)

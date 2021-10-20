@@ -2,7 +2,6 @@ from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from preprocessing.datasetModule import Set
 from Model import CNN
-from Dice_Loss import DiceLoss
 import torch
 import os
 from datetime import datetime
@@ -10,9 +9,10 @@ import nibabel as nib
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from preprocessing.DataLoader3D import DataLoader3D
+from loss import WeightedTverskyLoss, DiceLoss
 
 #hyper parameters
-batch_size = 8
+batch_size = 2
 learning_rate = 0.01
 num_epochs = 10
 base_features = 8
@@ -35,7 +35,7 @@ dir_path = os.path.join(os.getcwd(), "Cropped_Task3")
 X_train, X_test = train_test_split(Set(dir_path, sub_dir = 'crop_sub-1'), test_size=0.3, random_state=25)
 
 'Load training and test set, batch size may vary'
-train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size), DataLoader(X_test, batch_size=1)
+train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device), DataLoader(X_test, batch_size=1)
 
 'Run the CNN'
 model = CNN(3,base_features=base_features)
@@ -46,13 +46,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 for param in model.parameters():
     print(param)
 n_total_steps = 10 if 10 > train_loader.get_data_length() else train_loader.get_data_length()
-loss_func_2 = DiceLoss()
+loss_func_2 = WeightedTverskyLoss()
 
 losses = []
 for epoch in range(num_epochs):
     for i, image_set in enumerate(train_loader):
-        image = image_set['data'].to(device)
-        labels = image_set['seg'].to(device)
+        image = image_set['data']
+        labels = image_set['seg']
         outputs = model(image)
         optimizer.zero_grad(set_to_none=True) #I'd put it further down, it might not make a difference
         loss = loss_func_2(outputs, labels)
