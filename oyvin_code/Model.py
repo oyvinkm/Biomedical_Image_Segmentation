@@ -134,14 +134,14 @@ class CNN(nn.Module):
         #Encode Layer 1
         out = self.conv1_layer1(out)
         out = self.conv1_layer2(out)
-        print('Layer 1:' , out.shape)
+       
         skips.append(out)
         out = self.maxPool1(out)
 
         #Encode Layer 2
         out = self.conv2_layer1(out)
         out = self.conv2_layer2(out)
-        print('Layer 2:' , out.shape)
+       
         skips.append(out)
         out = self.maxPool2(out)
         
@@ -149,35 +149,34 @@ class CNN(nn.Module):
         #Encode Layer 3
         out = self.conv3_layer1(out)
         out = self.conv3_layer2(out)
-        print('Layer 3:' , out.shape)
+       
         skips.append(out)
         out = self.maxPool3(out)
 
         #Bottom Layer
         out = self.conv4_layer1(out)
         out = self.conv4_layer2(out)
-        print('Layer 4:' , out.shape)
+       
         out = self.upconv1(out)
 
         #Decode Layer 1
         out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv5_layer1(out)
         out = self.conv5_layer2(out)
-        print('Layer 5:' , out.shape)
+        
         out = self.upconv2(out)
         
         #Decode Layer 2
         out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv6_layer1(out)
         out = self.conv6_layer2(out)
-        print('Layer 6:' , out.shape)
+        
         out = self.upconv3(out)
 
         #Decode Layer 3
         out = torch.cat((skips.pop(), out), dim=1)
         out = self.conv7_layer1(out)
         out = self.conv7_layer2(out)
-        print('Layer 7:' , out.shape)
 
         #Final
         out = self.final_conv(out)

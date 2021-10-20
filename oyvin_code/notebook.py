@@ -10,11 +10,12 @@ import torch.nn as nn
 from matplotlib import pyplot as plt
 from preprocessing.DataLoader3D import DataLoader3D
 from loss import WeightedTverskyLoss, DiceLoss
+from Image_Functions import crop_to_size
 
 #hyper parameters
 batch_size = 2
 learning_rate = 0.01
-num_epochs = 10
+num_epochs = 200
 base_features = 8
 patch_size = (128,128,128)
 
@@ -33,7 +34,7 @@ def save_image(data, affine):
 'Splitting the data into 30% test and 70% training.'
 dir_path = os.path.join(os.getcwd(), "Cropped_Task3")
 X_train, X_test = train_test_split(Set(dir_path, sub_dir = 'crop_sub-1'), test_size=0.3, random_state=25)
-
+X_test = crop_to_size(X_test, (176,176,176))
 'Load training and test set, batch size may vary'
 train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device), DataLoader(X_test, batch_size=1)
 
@@ -43,16 +44,15 @@ model = nn.DataParallel(model)
 model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-for param in model.parameters():
-    print(param)
+
 n_total_steps = 10 if 10 > train_loader.get_data_length() else train_loader.get_data_length()
 loss_func_2 = WeightedTverskyLoss()
 
 losses = []
 for epoch in range(num_epochs):
     for i, image_set in enumerate(train_loader):
-        image = image_set['data']
-        labels = image_set['seg']
+        image = image_set['data'].to(device)
+        labels = image_set['seg'].to(device)
         outputs = model(image)
         optimizer.zero_grad(set_to_none=True) #I'd put it further down, it might not make a difference
         loss = loss_func_2(outputs, labels)
