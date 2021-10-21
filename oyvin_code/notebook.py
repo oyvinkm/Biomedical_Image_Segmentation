@@ -56,7 +56,7 @@ model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 n_total_steps = 10 if 10 > train_loader.get_data_length() else train_loader.get_data_length()
-loss_func_2 = nn.BCEWithLogitsLoss()
+loss_func_2 = DiceLoss()
 
 epoch_losses = []
 for epoch in range(num_epochs):
