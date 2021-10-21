@@ -184,6 +184,7 @@ class CNN(nn.Module):
 
             #Final
             out = self.final_conv(out)
+            return out
         else:
             out = x.float()
             skips = []
@@ -237,4 +238,4 @@ class CNN(nn.Module):
 
             #Final
             layers.append(self.final_conv(out))
-        return layers
+            return layers
