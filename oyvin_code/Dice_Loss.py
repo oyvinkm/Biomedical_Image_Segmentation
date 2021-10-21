@@ -13,6 +13,6 @@ class DiceLoss(nn.Module):
         targets = targets.view(-1)
 
         intersection = (inputs*targets).sum()
-        dice = (2.*intersection + smooth)/(inputs.sum()**2 + targets.sum()**2 + smooth)
+        dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
 
         return 1 - dice

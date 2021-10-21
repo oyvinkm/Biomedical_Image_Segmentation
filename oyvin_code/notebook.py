@@ -95,5 +95,5 @@ print("The saved name of the file was = ", str(time) , ".csv")
 torch.save(prediction, str(time) + ".csv")
 
 plt.plot(epoch_losses)
-plt.savefig('Losses_%s',str(time))
+plt.savefig('Losses_', num_epochs)
 print(epoch_losses)

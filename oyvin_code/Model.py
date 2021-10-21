@@ -6,10 +6,11 @@ from torch import nn
 
 "Simple neural network with one convolution and activation"
 class CNN(nn.Module):
-    def __init__(self, in_channels, base_features : int):
+    def __init__(self, in_channels, base_features : int, deep_supervision = False):
         super(CNN, self).__init__()
         self.in_channels =  in_channels
         self.base_features = base_features
+        self.deep_supervision = deep_supervision
         self.maxpool = nn.MaxPool3d
         self.upconv = nn.ConvTranspose3d
         #Layer Encode 1
@@ -30,25 +31,27 @@ class CNN(nn.Module):
         #Bottom Layer
         self.conv4_layer1 = self._conv_layer_set(self.base_features*8, self.base_features*8)
         self.conv4_layer2 = self._conv_layer_set(self.base_features*8, self.base_features*16)
-        self.upconv1 = self.upconv(self.base_features*16, self.base_features*16, 2, 2)
+        self.upconv1 = self.upconv(self.base_features*16, self.base_features*16, (2,2,2), 2)
 
         #Decode Layer 1
         self.conv5_layer1 = self._conv_layer_set((self.base_features*8 + self.base_features*16), self.base_features*8)
         self.conv5_layer2 = self._conv_layer_set(self.base_features*8, self.base_features*8)
-        self.upconv2 = self.upconv(self.base_features*8, self.base_features*8, 2, 2)
+        self.supervised_layer5 = nn.Sequential(nn.Conv3d(self.base_features*8, 1, kernel_size=3, stride=1, padding=1), nn.Softmax(dim=0))
+        self.upconv2 = self.upconv(self.base_features*8, self.base_features*8, (2,2,2), 2)
 
         #Decode Layer 2
         self.conv6_layer1 = self._conv_layer_set((self.base_features*4 + self.base_features*8), self.base_features*4)
         self.conv6_layer2 = self._conv_layer_set(self.base_features*4, self.base_features*4)
-        self.upconv3 = self.upconv(self.base_features*4, self.base_features*4, 2, 2)
+        self.supervised_layer6 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3, stride=1, padding=1), nn.Softmax(dim=0))
+        self.upconv3 = self.upconv(self.base_features*4, self.base_features*4, (2,2,2), 2)
         
         #Decode Layer 3
         self.conv7_layer1 = self._conv_layer_set((self.base_features + self.base_features*4), self.base_features)
         self.conv7_layer2 = self._conv_layer_set(self.base_features, self.base_features)
-
+        #self.supervised_layer7 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3), nn.Softmax())
         #Output
         self.final_conv = nn.Sequential(nn.Conv3d(self.base_features, 1, kernel_size=3, stride=1, padding=1),
-                          nn.Sigmoid())
+                          nn.Softmax(dim=0))
 
 
         """ self.encoder_blocks = nn.ModuleList(self.build_block('encode'))
@@ -62,22 +65,22 @@ class CNN(nn.Module):
             nn.LeakyReLU()
             )
             return conv_layer
-
     """def encoder_block(self, feat_in, feat_out, feat_mid = None, maxpool = True):
         if feat_mid is None:
             feat_mid = feat_in
         conv1 = self._conv_layer_set(feat_in, feat_mid)
-        conv2 = self._conv_layer_set(feat_mid, feat_out)
         if maxpool:
             block = nn.Sequential(conv1, conv2)
         else:
             block = nn.Sequential(conv1,conv2, nn.ConvTranspose3d(feat_out, feat_out, 2, 2))
         return block
 
+
     def decoder_block(self, feat_in, feat_out, feat_uncat = None):
         if feat_uncat is None:
             conv1 = self._conv_layer_set(feat_in, feat_out)
         else:
+        conv2 = self._conv_layer_set(feat_mid, feat_out)
             conv1 = self._conv_layer_set(feat_in, feat_uncat)
         conv2 = self._conv_layer_set(feat_out, feat_out)
         block = nn.Sequential(conv1, conv2, nn.ConvTranspose3d(feat_out, feat_out, 2, 2))
@@ -129,55 +132,109 @@ class CNN(nn.Module):
         out = self.final_conv(out) """
 
     def forward(self, x):
-        out = x.float()
-        skips = []
-        #Encode Layer 1
-        out = self.conv1_layer1(out)
-        out = self.conv1_layer2(out)
-       
-        skips.append(out)
-        out = self.maxPool1(out)
-
-        #Encode Layer 2
-        out = self.conv2_layer1(out)
-        out = self.conv2_layer2(out)
-       
-        skips.append(out)
-        out = self.maxPool2(out)
+        if not self.deep_supervision:
+            out = x.float()
+            skips = []
+            #Encode Layer 1
+            out = self.conv1_layer1(out)
+            out = self.conv1_layer2(out)
         
+            skips.append(out)
+            out = self.maxPool1(out)
 
-        #Encode Layer 3
-        out = self.conv3_layer1(out)
-        out = self.conv3_layer2(out)
-       
-        skips.append(out)
-        out = self.maxPool3(out)
-
-        #Bottom Layer
-        out = self.conv4_layer1(out)
-        out = self.conv4_layer2(out)
-       
-        out = self.upconv1(out)
-
-        #Decode Layer 1
-        out = torch.cat((skips.pop(), out), dim=1)
-        out = self.conv5_layer1(out)
-        out = self.conv5_layer2(out)
+            #Encode Layer 2
+            out = self.conv2_layer1(out)
+            out = self.conv2_layer2(out)
         
-        out = self.upconv2(out)
-        
-        #Decode Layer 2
-        out = torch.cat((skips.pop(), out), dim=1)
-        out = self.conv6_layer1(out)
-        out = self.conv6_layer2(out)
-        
-        out = self.upconv3(out)
+            skips.append(out)
+            out = self.maxPool2(out)
+            
 
-        #Decode Layer 3
-        out = torch.cat((skips.pop(), out), dim=1)
-        out = self.conv7_layer1(out)
-        out = self.conv7_layer2(out)
+            #Encode Layer 3
+            out = self.conv3_layer1(out)
+            out = self.conv3_layer2(out)
+        
+            skips.append(out)
+            out = self.maxPool3(out)
 
-        #Final
-        out = self.final_conv(out)
-        return out
+            #Bottom Layer
+            out = self.conv4_layer1(out)
+            out = self.conv4_layer2(out)
+        
+            out = self.upconv1(out)
+
+            #Decode Layer 1
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv5_layer1(out)
+            out = self.conv5_layer2(out)
+            
+            out = self.upconv2(out)
+            
+            #Decode Layer 2
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv6_layer1(out)
+            out = self.conv6_layer2(out)
+            
+            out = self.upconv3(out)
+
+            #Decode Layer 3
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv7_layer1(out)
+            out = self.conv7_layer2(out)
+
+            #Final
+            out = self.final_conv(out)
+        else:
+            out = x.float()
+            skips = []
+            layers = []
+            #Encode Layer 1
+            out = self.conv1_layer1(out)
+            out = self.conv1_layer2(out)
+        
+            skips.append(out)
+            out = self.maxPool1(out)
+
+            #Encode Layer 2
+            out = self.conv2_layer1(out)
+            out = self.conv2_layer2(out)
+        
+            skips.append(out)
+            out = self.maxPool2(out)
+            
+
+            #Encode Layer 3
+            out = self.conv3_layer1(out)
+            out = self.conv3_layer2(out)
+        
+            skips.append(out)
+            out = self.maxPool3(out)
+
+            #Bottom Layer
+            out = self.conv4_layer1(out)
+            out = self.conv4_layer2(out)
+        
+            out = self.upconv1(out)
+
+            #Decode Layer 1
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv5_layer1(out)
+            out = self.conv5_layer2(out)
+            layers.append(self.supervised_layer5(out))
+            out = self.upconv2(out)
+            
+            #Decode Layer 2
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv6_layer1(out)
+            out = self.conv6_layer2(out)
+            layers.append(self.supervised_layer6(out))
+            out = self.upconv3(out)
+
+            #Decode Layer 3
+            out = torch.cat((skips.pop(), out), dim=1)
+            out = self.conv7_layer1(out)
+            out = self.conv7_layer2(out)
+
+            #Final
+            layers.append(self.final_conv(out))
+        return layers
