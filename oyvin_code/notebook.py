@@ -10,13 +10,13 @@ import numpy as np
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from preprocessing.DataLoader3D import DataLoader3D
-from loss import WeightedTverskyLoss, DiceLoss
+from loss import WeightedTverskyLoss, DiceLoss, BinaryFocalLoss
 from Image_Functions import crop_to_size
 
 #hyper parameters
-batch_size = 2
+batch_size = 1
 learning_rate = 3e-4
-num_epochs = 1
+num_epochs = 20
 base_features =16
 patch_size = (128,128,128)
 maxpool = nn.MaxPool3d
@@ -50,26 +50,26 @@ train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_s
 
 'Run the CNN'
 model = CNN(3,base_features=base_features)
-#model = nn.DataParallel(model)
 model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 n_total_steps = 10 if 10 > train_loader.get_data_length() else train_loader.get_data_length()
-loss_func_2 = DiceLoss()
+loss_func_2 =BinaryFocalLoss()
 
 epoch_losses = []
 for epoch in range(num_epochs):
     loss_here = []
-    if epoch > 30:
+    """ if epoch > 30:
         if (np.max(epoch_losses[-10:] - np.min(epoch_losses[-10:]))) < 1e-3:
             for g in optimizer.param_groups:
                 old_lr = g['lr']
                 print('Changing learning rate from', old_lr, ' to', old_lr*10)
-                g['lr'] = old_lr * 10
+                g['lr'] = old_lr * 10 """
     for i, image_set in enumerate(train_loader):
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)
+        print(image_set['keys'])
         outputs = model(image)
         optimizer.zero_grad(set_to_none=True) #I'd put it further down, it might not make a difference
         loss = loss_func_2(outputs, labels)

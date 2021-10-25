@@ -49,7 +49,7 @@ deep_loss = DeepSupervisionLoss(loss_func_2, weigths_factors=np.random.rand(3))
         break """
 
 for g in optimizer.param_groups:
-    print(g['lr'])
+    
 
 
 

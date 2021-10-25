@@ -51,7 +51,7 @@ class CNN(nn.Module):
         #self.supervised_layer7 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3), nn.Softmax())
         #Output
         self.final_conv = nn.Sequential(nn.Conv3d(self.base_features, 1, kernel_size=3, stride=1, padding=1),
-                          nn.Softmax(dim=0))
+                          nn.Sigmoid())
 
 
         """ self.encoder_blocks = nn.ModuleList(self.build_block('encode'))

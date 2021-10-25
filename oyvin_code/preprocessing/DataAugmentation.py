@@ -16,7 +16,7 @@ class AbstractTransform(object):
         ret_str = str(type(self).__name__) + "( " + ", ".join(
             [key + " = " + repr(val) for key, val in self.__dict__.items()]) + " )"
         return ret_str
-
+        
 class AddGaussianNoise(AbstractTransform):
     def __init__(self, noise_variance=(0, 0.1), p_per_sample=1, p_per_channel : float = 1, per_channel:bool=False, data_key='data'):
         self.noise_variance = noise_variance
@@ -29,7 +29,6 @@ class AddGaussianNoise(AbstractTransform):
         for b in range(len(data_dict[self.data_key])):
             if np.random.uniform() < self.p_per_sample:
                 data_dict[self.data_key][b] = augment_gaussian_noise(data_dict[self.data_key][b], self.noise_variance, self.p_per_channel, self.per_channel)
-    
         return data_dict
 
 
