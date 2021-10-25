@@ -1,6 +1,8 @@
 from torch import nn
 import torch
 from torch.nn import Softmax
+from torch.nn.functional import logsigmoid
+import math
 
 class DiceLoss(nn.Module):
     def __init__(self, weight=None, size_average=True):
@@ -37,3 +39,14 @@ class WeightedTverskyLoss(nn.Module):
         loss = ((p0*g0).sum())/((p0*g0).sum()+self.alpha*((p0*g1).sum()) + self.beta*((p1*g0).sum()))
 
         return 1 - loss
+
+class _BCEWithLogitsLoss(nn.Module):
+    def __init__(self):
+        super(_BCEWithLogitsLoss, self).__init__()
+    
+    def forward(self, input, target):
+        input = input.view(-1)
+        target = target.view(-1)
+        p1 = target*(logsigmoid(input))
+        p0 = (1-target)*math.log(1-torch.sigmoid(input))
+        return -1 * (p1 + p0)

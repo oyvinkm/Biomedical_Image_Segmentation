@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image
 from datasetModule import Set
 from model import CNN
-from loss import DiceLoss, WeightedTverskyLoss
+from loss import DiceLoss, WeightedTverskyLoss, _BCEWithLogitsLoss
 import torch
 import os
 from datetime import datetime
@@ -16,11 +16,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #hyper parameters
 batch_size = 2
 learning_rate = 0.1
-num_epochs = 10
+num_epochs = 2
 base_features = 4
 TverskyAlpha = 0.9
 TverskyBeta = round(1 - TverskyAlpha, 1)
-LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
+LossFunc = _BCEWithLogitsLoss()
 
 "Need to specify the local path on computer"
 dir_path = "Biomedical_Image_Segmentation/Cropped_Task3/"
