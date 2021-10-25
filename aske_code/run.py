@@ -19,7 +19,7 @@ learning_rate = 0.1
 num_epochs = 10
 base_features = 4
 TverskyAlpha = 0.9
-TverskyBeta = 1 - TverskyAlpha
+TverskyBeta = round(1 - TverskyAlpha, 1)
 LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
 
 "Need to specify the local path on computer"
