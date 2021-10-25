@@ -18,8 +18,9 @@ batch_size = 2
 learning_rate = 0.1
 num_epochs = 10
 base_features = 4
-TverskyAlpha = 0.1
-TverskyBeta = 0.9
+TverskyAlpha = 0.9
+TverskyBeta = 1 - TverskyAlpha
+LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
 
 "Need to specify the local path on computer"
 dir_path = "Biomedical_Image_Segmentation/Cropped_Task3/"
@@ -46,7 +47,6 @@ model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 n_total_steps = len(train_loader)
-loss_func_2 = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
 
 'Run the CNN'
 losses = []
@@ -55,7 +55,7 @@ for epoch in range(num_epochs):
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)
         outputs = model(image)
-        loss = loss_func_2(outputs, labels)
+        loss = LossFunc(outputs, labels)
         losses.append(loss.item())
         optimizer.zero_grad()
         loss.backward()
@@ -63,16 +63,14 @@ for epoch in range(num_epochs):
         if (i+1) % 1 == 0:
             print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
 
-plt.plot(losses)
-plt.savefig('Losses')
+#plt.plot(losses)
+#plt.savefig('Losses')
 print(losses)
 
 test_pred = iter(test_loader)
 test_img = test_pred.next()
 
 prediction = model(test_img['data'].to(device))
-
-save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine)
 time = datetime.now().replace(microsecond=0).strftime("kl%H%M%S-%d.%m.%Y")
-print("The saved name of the file was = ", str(time) , ".csv")
-torch.save(prediction, str(time) + ".csv"
+name = str(num_epochs)+"epoch"+str(TverskyAlpha)+"-"+str(TverskyBeta)+time+".nii.gz"
+save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine, name=name)

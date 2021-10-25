@@ -50,6 +50,6 @@ def crop_to_size(set, size):
         set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
     return set
 
-def save_image(data, affine):
+def save_image(data, affine, name="test.nii.gz"):
     cropped_img = nib.Nifti1Image(data, affine)
-    nib.save(cropped_img, "test.nii.gz")
+    nib.save(cropped_img, name)
