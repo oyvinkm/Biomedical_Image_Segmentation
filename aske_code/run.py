@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image
@@ -19,27 +13,17 @@ from matplotlib import pyplot as plt
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Most of the functionallity is stored in module files. 
-# The data consist of Images with 3 channels and segmentation images with 2 channels.
-# 
-
-# In[2]:
-
-
 #hyper parameters
 batch_size = 2
 learning_rate = 0.1
-num_epochs = 200
+num_epochs = 10
 base_features = 4
-
-
-# In[3]:
-
+TverskyAlpha = 0.1
+TverskyBeta = 0.9
 
 "Need to specify the local path on computer"
 dir_path = "Biomedical_Image_Segmentation/Cropped_Task3/"
 
-#dir_path = os.path.join(os.getcwd(), '/Cropped_Task3')
 test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation')
 test_imgur = nib.load(os.path.join(os.getcwd(), "Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
 
@@ -62,7 +46,7 @@ model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 n_total_steps = len(train_loader)
-loss_func_2 = WeightedTverskyLoss((0.1,0.9))
+loss_func_2 = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
 
 'Run the CNN'
 losses = []
@@ -91,7 +75,4 @@ prediction = model(test_img['data'].to(device))
 save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine)
 time = datetime.now().replace(microsecond=0).strftime("kl%H%M%S-%d.%m.%Y")
 print("The saved name of the file was = ", str(time) , ".csv")
-torch.save(prediction, str(time) + ".csv")
-
-#get_ipython().system('ipython nbconvert — to script run.ipynb')
-
+torch.save(prediction, str(time) + ".csv"
