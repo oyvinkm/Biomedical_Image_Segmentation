@@ -50,7 +50,7 @@ class CNN(nn.Module):
         self.conv7_layer2 = self._conv_layer_set(self.base_features, self.base_features)
         #self.supervised_layer7 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3), nn.Softmax())
         #Output
-        self.final_conv = nn.Sequential(nn.Conv3d(self.base_features, 1, kernel_size=3, stride=1, padding=1),
+        self.final_conv = nn.Sequential(nn.Conv3d(self.base_features, 1, kernel_size=1, stride=1),
                           nn.Sigmoid())
 
 

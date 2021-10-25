@@ -8,15 +8,10 @@ class DiceLoss(nn.Module):
         super(DiceLoss, self).__init__()
 
     def forward(self, inputs, targets, smooth=1e-5):
-        print('input shape', inputs.shape)
-        print('target shape', targets.shape)
         inputs = torch.sigmoid(inputs)
         inputs = inputs.view(-1)
         targets = targets.view(-1)
-        print('sum inputs ', inputs.sum())
-        print('sum targets', targets.sum())
         intersection = (inputs*targets).sum()
-        print('intersection' , intersection)
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
         print(dice)
         return 1 - dice
@@ -66,19 +61,6 @@ class BinaryFocalLoss(nn.Module):
         self.reduction = reduction
 
         assert self.reduction in ['none', 'mean', 'sum']
-
-        # if self.alpha is None:
-        #     self.alpha = torch.ones(2)
-        # elif isinstance(self.alpha, (list, np.ndarray)):
-        #     self.alpha = np.asarray(self.alpha)
-        #     self.alpha = np.reshape(self.alpha, (2))
-        #     assert self.alpha.shape[0] == 2, \
-        #         'the `alpha` shape is not match the number of class'
-        # elif isinstance(self.alpha, (float, int)):
-        #     self.alpha = np.asarray([self.alpha, 1.0 - self.alpha], dtype=np.float).view(2)
-
-        # else:
-        #     raise TypeError('{} not supported'.format(type(self.alpha)))
 
     def forward(self, output, target):
         #prob = torch.sigmoid(output)

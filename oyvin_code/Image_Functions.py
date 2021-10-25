@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import torchio as tio
+import os
 
 def show_slices(slices, color = 'gray'):
    """ Function to display row of image slices """
@@ -14,6 +15,14 @@ def slicing(img, x,y,z, cmap = 'gray'):
     show_slices([slice_0, slice_1, slice_2], color = cmap)
     plt.suptitle("Center slices for EPI image") 
     plt.show()
+
+def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
+    slice_0 = img[size[0], :, :]
+    slice_1 = img[:, size[1], :]
+    slice_2 = img[:, :, size[2]]
+    show_slices([slice_0, slice_1, slice_2], color = cmap)
+    plt.suptitle("Center slices for EPI image" ) 
+    plt.savefig(folder_name)
 
 def extract_brain_region(image, brain_mask, seg, background=0.):
 	''' find the boundary of the brain region, return the resized brain image and the index of the boundaries'''    
