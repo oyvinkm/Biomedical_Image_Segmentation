@@ -20,7 +20,7 @@ class DataLoader3D(DataLoaderBase):
         self.patch_size = patch_size
         self.data = data
         self.data_len = self.get_data_length()
-        self.keys = self.get_keys()
+        #self.keys = self.get_keys()
         if pad_sides is not None:
             if not isinstance(pad_sides, np.ndarray):
                 pad_sides = np.array(pad_sides)
@@ -36,11 +36,12 @@ class DataLoader3D(DataLoaderBase):
         return seg_pos
     
     def get_keys(self):
+        print('getting keys')
         return {(self._data[i]['key']) : i for i in range(self.data_len)}
 
     def determine_shapes(self):
-        num_seg = len(self._data[0]['seg'])
-        num_channels = len(self._data[0]['data'])
+        num_seg = 1
+        num_channels = 3
         data_shape = (self.BATCH_SIZE, num_channels, *self.patch_size)
         seg_shape = (self.BATCH_SIZE, num_seg, *self.patch_size)
         return data_shape, seg_shape
@@ -91,14 +92,16 @@ class DataLoader3D(DataLoaderBase):
 
 
     def generate_train_batch(self):
-        selected_index = np.random.choice(list(self.keys.keys()), self.BATCH_SIZE, True, None)
+        print('generating train batch')
+        selected_index = np.random.choice(list(self.data_len), self.BATCH_SIZE, True, None)
+        selected_keys = [self._data[k]['key'] for k in selected_index]
         data = np.zeros(self.data_shape, dtype=np.float32)
         seg = np.zeros(self.seg_shape, dtype=np.float32)
         # i = batch number
-        # j = key
+        # j = index
         for i, j in enumerate(selected_index):
-            seg_pos = self.get_seg_position(self.keys[j])
-            data_shape = self._data[self.keys[j]]['data'][0].shape
+            seg_pos = self.get_seg_position(j)
+            data_shape = self._data[j]['data'][0].shape
             if seg_pos is not None:
                 min_x = int(np.min(seg_pos[0]))
                 max_x = int(np.max(seg_pos[0]))
@@ -119,15 +122,15 @@ class DataLoader3D(DataLoaderBase):
                     lb_y, ub_y = self.get_bbox_axis(min_x , max_x, data_shape, 1, partial_patch=crop_choice)
                     lb_z, ub_z = self.get_bbox_axis(min_x , max_x, data_shape, 2, partial_patch=crop_choice)
                 else:
-                    data_shape = self._data[self.keys[j]]['data'][0].shape
+                    data_shape = self._data[j]['data'][0].shape
                     lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0)
                     lb_y, ub_y = self.get_bbox_axis(min_x , max_x, data_shape, 1)
                     lb_z, ub_z = self.get_bbox_axis(min_x , max_x, data_shape, 2)
                 resizer_data = (slice(0,3),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
                 resizer_seg = (slice(0,1),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
-                cropped_data = self._data[self.keys[j]]['data'][resizer_data]
+                cropped_data = self._data[j]['data'][resizer_data]
                 data[i] = cropped_data
-                cropped_seg = self._data[self.keys[j]]['seg'][resizer_seg]
+                cropped_seg = self._data[j]['seg'][resizer_seg]
                 seg[i] = cropped_seg
             else: 
                 lb_x = np.random.randint(0, data_shape[0] - self.patch_size[0])
@@ -139,14 +142,14 @@ class DataLoader3D(DataLoaderBase):
                 ub_z = lb_z + self.patch_size[2]
                 resizer_data = (slice(0,3),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
                 resizer_seg = (slice(0,1),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
-                cropped_data = self._data[self.keys[j]]['data'][resizer_data]
+                cropped_data = self._data[j]['data'][resizer_data]
                 data[i] = cropped_data
-                cropped_seg = self._data[self.keys[j]]['seg'][resizer_seg]
+                cropped_seg = self._data[j]['seg'][resizer_seg]
                 seg[i] = cropped_seg
         if self.to_tensor:
             data = torch.from_numpy(data)
             seg = torch.from_numpy(seg)
-        return {'data' : data, 'seg' : seg, 'keys' : selected_index}
+        return {'data' : data, 'seg' : seg, 'keys' : selected_keys}
 
     
     

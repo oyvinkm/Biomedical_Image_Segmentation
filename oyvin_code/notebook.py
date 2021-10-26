@@ -1,3 +1,4 @@
+from sklearn.utils import shuffle
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
 from preprocessing.datasetModule import Set
@@ -17,8 +18,6 @@ try:
     from preprocessing.DataAugmentation import AddGaussianNoise, RotateRandomTransform, FlipTransform, AddRicianNoise
 except:
     print('Path not good enough')
-finally:
-    from oyvin_code.preprocessing.DataAugmentation import AddGaussianNoise, RotateRandomTransform, FlipTransform, AddRicianNoise
 #hyper parameters
 batch_size = 2
 learning_rate = 3e-4
@@ -36,16 +35,14 @@ def CreateSeg(seg, x):
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(device)
 
 "Need to specify the local path on computer"
 test_path = os.getcwd()
-print(test_path)
 test_imgur = nib.load(os.path.join(test_path, "Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
 
 def save_image(data, affine, name):
     cropped_img = nib.Nifti1Image(data, affine)
-    nib.save(cropped_img, ('name'+'.nii.gz'))
+    nib.save(cropped_img, ('name'+'.nii.gz'))   
 
 'Splitting the data into 30% test and 70% training.'
 
@@ -59,10 +56,9 @@ X_train = Set(dir_path, train, transforms.Compose([ RotateRandomTransform(),
                                                     AddRicianNoise(),
                                                     AddGaussianNoise()]
                                             ))
+#X_train = Set(dir_path, train)
 X_test = Set(dir_path, test)
 
-test = X_train.__getitem__(1)
-slicing(test['data'][1], 64,64,64)
 
 'Load training and test set, batch size may vary'
 train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device), DataLoader(X_test, batch_size=1)
@@ -102,7 +98,7 @@ for epoch in range(num_epochs):
         if i >= n_total_steps-1:
             if not os.path.exists(folder_path):
                 os.mkdir(folder_path)
-            save_slice(outputs[0][0].detach().numpy(), os.path.join(folder, str(epoch)))
+            save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))
             break
     epoch_losses.append(np.mean(loss_here))        
 

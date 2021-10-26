@@ -21,7 +21,6 @@ class Set(Dataset):
         
     def __getitem__(self, index):
         path = os.path.join(self.data_path, self.folders[index])
-        print(path)
         data, seg = self.folders_cont[index]
         sample = {}
         img_data = [nib.load(os.path.join(path,elm)).get_fdata() for elm in data]
