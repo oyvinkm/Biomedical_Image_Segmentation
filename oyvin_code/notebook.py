@@ -7,17 +7,23 @@ import os
 from datetime import datetime
 import nibabel as nib
 import numpy as np
+from torchvision import transforms
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from preprocessing.DataLoader3D import DataLoader3D
 from loss import WeightedTverskyLoss, DiceLoss, BinaryFocalLoss
-from Image_Functions import crop_to_size, save_slice
-
+from Image_Functions import crop_to_size, save_slice, slicing
+try:
+    from preprocessing.DataAugmentation import AddGaussianNoise, RotateRandomTransform, FlipTransform, AddRicianNoise
+except:
+    print('Path not good enough')
+finally:
+    from oyvin_code.preprocessing.DataAugmentation import AddGaussianNoise, RotateRandomTransform, FlipTransform, AddRicianNoise
 #hyper parameters
 batch_size = 2
 learning_rate = 3e-4
 num_epochs = 50
-base_features =16
+base_features = 16 
 patch_size = (128,128,128)
 maxpool = nn.MaxPool3d
 def CreateSeg(seg, x):
@@ -42,9 +48,22 @@ def save_image(data, affine, name):
     nib.save(cropped_img, ('name'+'.nii.gz'))
 
 'Splitting the data into 30% test and 70% training.'
+
 dir_path = os.path.join(os.getcwd(), "Cropped_Task3/Segmentations")
-X_train, X_test = train_test_split(Set(dir_path, sub_dir = 'crop_sub-2'), test_size=0.3, random_state=25)
-X_test = crop_to_size(X_test, (256,288,176))
+sub_dir = 'crop_sub-2'
+data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
+train, test = train_test_split(data_folders)
+
+X_train = Set(dir_path, train, transforms.Compose([ RotateRandomTransform(), 
+                                                    FlipTransform(), 
+                                                    AddRicianNoise(),
+                                                    AddGaussianNoise()]
+                                            ))
+X_test = Set(dir_path, test)
+
+test = X_train.__getitem__(1)
+slicing(test['data'][1], 64,64,64)
+
 'Load training and test set, batch size may vary'
 train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device), DataLoader(X_test, batch_size=1)
 
@@ -96,9 +115,9 @@ prediction = model(test_img['data'].to(device))
 
 save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine, 'pred_seg')
 save_image(torch.squeeze(test_img['seg'].detach()).cpu().numpy(), test_imgur.affine, 'true_seg')
-time = datetime.now().replace(microsecond=0).strftime("kl%H%M%S-%d.%m.%Y")
+#time = datetime.now().replace(microsecond=0).strftime("kl%H%M%S-%d.%m.%Y")
 #print("The saved name of the file was = ", str(time) , ".csv")
-torch.save(prediction, str(time) + ".csv")
+#torch.save(prediction, str(time) + ".csv")
 
 plt.plot(epoch_losses)
 plt.savefig(('Losses_' + str(num_epochs)))

@@ -1,4 +1,5 @@
 
+from oyvin_code.preprocessing.DataAugmentation import AddGaussianNoise
 from preprocessing.datasetModule import Set
 from preprocessing.DataLoader3D import DataLoader3D
 import os
@@ -36,19 +37,11 @@ loaded = DataLoader3D(training, (128,128,128), 1, 10)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 loss_func_2 = nn.BCEWithLogitsLoss()
 deep_loss = DeepSupervisionLoss(loss_func_2, weigths_factors=np.random.rand(3))
-""" for i, image in enumerate(loaded):
-    print(i)
-    out = model(image['data'])
-    seg = CreateSeg(image['seg'], len(out))
-    optimizer.zero_grad() 
-    loss = deep_loss(out, seg)
-    print(loss.item())
-    loss.backward()
-    optimizer.step()
-    if i >= 20:
-        break """
+load = next(iter(loaded))
 
-for g in optimizer.param_groups:
+noise = AddGaussianNoise()(load)
+
+
     
 
 
