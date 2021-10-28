@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import nibabel as nib
 import numpy as np
+import csv
 from torchvision import transforms
 import torch.nn as nn
 from matplotlib import pyplot as plt
@@ -15,7 +16,11 @@ from preprocessing.DataLoader3D import DataLoader3D
 from loss import WeightedTverskyLoss, DiceLoss, BinaryFocalLoss
 from Image_Functions import crop_to_size, save_slice, slicing
 try:
-    from preprocessing.DataAugmentation import AddGaussianNoise, RotateRandomTransform, FlipTransform, AddRicianNoise
+    from preprocessing.DataAugmentation import (AddGaussianNoise, 
+                                                RotateRandomTransform, 
+                                                FlipTransform, 
+                                                AddRicianNoise,
+                                                SpatialTransformsRotate)
 except:
     print('Path not good enough')
 #hyper parameters
@@ -50,18 +55,33 @@ dir_path = os.path.join(os.getcwd(), "Cropped_Task3/Segmentations")
 sub_dir = 'crop_sub-2'
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
 train, test = train_test_split(data_folders)
+print(train[:2])
 
-X_train = Set(dir_path, train, transforms.Compose([ RotateRandomTransform(), 
-                                                    FlipTransform(), 
-                                                    AddRicianNoise(),
-                                                    AddGaussianNoise()]
-                                            ))
-#X_train = Set(dir_path, train)
+X_train = Set(dir_path, train)
 X_test = Set(dir_path, test)
+""" FlipTransform(), 
+AddRicianNoise(),
+AddGaussianNoise() """
+#X_train = Set(dir_path, train)
+#X_test = Set(dir_path, test)
+
+
+
 
 
 'Load training and test set, batch size may vary'
-train_loader, test_loader = DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device), DataLoader(X_test, batch_size=1)
+train_loader= DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device)
+test_loader = DataLoader()
+
+
+""" for i, img in enumerate(train_loader):
+    save_slice(img['seg'][0][0], ('seg_sub2' + str(i) +'.png'))
+    if not train_loader.GetDialate():
+        train_loader.EnableDialate()
+    train_loader.UpdateDialPad(1)
+    if i == 15:
+        break """
+
 
 'Run the CNN'
 model = CNN(3,base_features=base_features)
@@ -77,12 +97,10 @@ folder = '{}_{}'.format('Loss_func', str(num_epochs))
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 for epoch in range(num_epochs):
     loss_here = []
-    """ if epoch > 30:
-        if (np.max(epoch_losses[-10:] - np.min(epoch_losses[-10:]))) < 1e-3:
-            for g in optimizer.param_groups:
-                old_lr = g['lr']
-                print('Changing learning rate from', old_lr, ' to', old_lr*10)
-                g['lr'] = old_lr * 10 """
+    if epoch <= 20 and epoch % 2 == 0:
+        train_loader.UpdateDialPad(-1)
+    elif epoch > 20:
+        train_loader.EnableDialate     
     for i, image_set in enumerate(train_loader):
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)
@@ -96,6 +114,7 @@ for epoch in range(num_epochs):
         if (i+1) % 1 == 0:
             print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
         if i >= n_total_steps-1:
+            np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
             if not os.path.exists(folder_path):
                 os.mkdir(folder_path)
             save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))

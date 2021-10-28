@@ -2,9 +2,16 @@ import abc
 from warnings import warn
 from typing import Optional, Sequence, Union, Tuple
 import numpy as np
-from preprocessing.augmentation_funcs import augment_gaussian_noise, augment_rician_noise, map_spatial_axes
+from preprocessing.augmentation_funcs import (  augment_gaussian_noise, 
+                                                augment_rician_noise, 
+                                                map_spatial_axes, 
+                                                convert_to_tensor, 
+                                                do_rotation, 
+                                                interpolate_img)
 import random
 from scipy.ndimage import rotate
+from scipy.spatial.transform import Rotation as R
+import torch
 
 
 
@@ -67,3 +74,58 @@ class FlipTransform(object):
         for d in range(s_shape[0]):
             sample[self.seg_key][d] = np.ascontiguousarray(np.flip(sample[self.seg_key][d], map_spatial_axes(sample[self.seg_key][d].ndim, self.spatial_axis)))
         return sample
+
+class ToTensor(object):
+
+    def __init__(self, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None) -> None:
+        super().__init__()
+        self.dtype = dtype
+        self.device = device
+
+    def __call__(self, img) -> torch.Tensor:
+        """
+        Apply the transform to `img` and make it contiguous.
+        """
+        return convert_to_tensor(img, dtype=self.dtype, device=self.device, wrap_sequence=True)
+
+class SpatialTransformsRotate(object):
+    def __init__(self, data_key = 'data', seg_key = 'seg', order = 3, border_mode_data = 'nearest',
+                border_mode_seg = 'nearest', border_cval_seg = 0, border_cval_data = 0, 
+                p_per_channel :float = 1, p_per_axis : float = 1) -> None:
+        self.data_key = data_key
+        self.seg_key = seg_key
+        self.order = order
+        self.border_mode_data = border_mode_data
+        self.border_cval_data = border_cval_data
+        self.border_mode_seg = border_mode_seg
+        self.border_cval_seg = border_cval_seg
+        self.p_per_channel = p_per_channel
+        self.p_per_axis = p_per_axis
+    def calc(self, sample):
+        data = sample[self.data_key]
+        seg = sample[self.seg_key]
+        d_shape = data.shape
+        s_shape = seg.shape
+        seg_result = np.zeros(s_shape, dtype=np.float32)
+        data_result = np.zeros(d_shape, dtype=np.float32)
+        img_shape = ((d_shape[1], d_shape[2], d_shape[3]))
+        dim = len(img_shape)
+        print(img_shape)
+
+        coords = do_rotation(shape = img_shape)
+        print(coords.shape)
+        print(len(data.shape))
+        for channel_id in range(data.shape[0]):
+            data_result[channel_id] = interpolate_img(data[channel_id], 
+                                                    coords, self.order,
+                                                    self.border_mode_data, 
+                                                    cval=self.border_cval_data)
+        for channel_id in range(seg.shape[0]):
+            seg_result[channel_id] = interpolate_img(seg[channel_id], 
+                                                    coords, self.order,
+                                                    self.border_mode_seg, 
+                                                    cval=self.border_cval_seg)
+        return data_result, seg_result
+    def __call__(self,data_dict):
+        data_dict[self.data_key], data_dict[self.seg_key] = self.calc(data_dict)
+        return data_dict
