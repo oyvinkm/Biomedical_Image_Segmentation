@@ -70,7 +70,7 @@ AddGaussianNoise() """
 
 
 'Load training and test set, batch size may vary'
-train_loader= DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device)
+train_loader= DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device, to_tensor=True)
 test_loader = DataLoader(X_train, shuffle=True)
 
 

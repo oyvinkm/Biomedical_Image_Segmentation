@@ -36,11 +36,6 @@ class DataLoader3D(DataLoaderBase):
             seg_pos = None
         return seg_pos
 
-    def CreateDialate(self, min, max, axis : int):
-        lb = min - self.dial_pad if ((min-self.dial_pad) > 0) else 0
-        ub = max + self.dial_pad if ((max+self.dial_pad) < self.patch_size[axis]) else self.patch_size[axis]
-        return lb, ub
-
     def EnableDialate(self):
         if self.dialate:
             self.dialate = False
@@ -54,6 +49,7 @@ class DataLoader3D(DataLoaderBase):
         self.iterations += iterations
 
     def get_keys(self):
+        '''Don't use, it's super slow'''
         print('getting keys')
         return {(self._data[i]['key']) : i for i in range(self.data_len)}
 
@@ -154,24 +150,7 @@ class DataLoader3D(DataLoaderBase):
                 if self.dialate:
                         dialated = ndimage.binary_dilation(seg[i], self.dialeteshape, iterations=self.iterations)
                         seg[i] = dialated
-                        """ print(selected_keys)
-                        print('pre sum', seg[i].sum())
-                        patch_seg_pos = np.where(seg[i] != 0)
-                        print('patch_pos', patch_seg_pos)
-                        min_x = int(np.min(patch_seg_pos[0]))
-                        max_x = int(np.max(patch_seg_pos[0]))
-                        min_y = int(np.min(patch_seg_pos[1]))
-                        max_y = int(np.max(patch_seg_pos[1]))
-                        min_z = int(np.min(patch_seg_pos[2])) 
-                        max_z = int(np.max(patch_seg_pos[2]))
-                        dial_lb_x, dial_ub_x = self.CreateDialate(min_x, max_x, axis=0)
-                        dial_lb_y, dial_ub_y = self.CreateDialate(min_y, max_y, axis=1)
-                        dial_lb_z, dial_ub_z = self.CreateDialate(min_z, max_z, axis=2)
-                        print('x ', dial_lb_x, dial_ub_x)
-                        print('y ', dial_lb_y, dial_ub_y)
-                        print('z', dial_lb_z,dial_ub_z)
-                        seg[i][dial_lb_x:dial_ub_x][dial_lb_y:dial_ub_y][dial_lb_z:dial_ub_z] = 1
-                        print('post sum ', seg[i].sum()) """
+                        
             else: 
                 lb_x = np.random.randint(0, data_shape[0] - self.patch_size[0])
                 lb_y = np.random.randint(0, data_shape[1] - self.patch_size[1])
@@ -187,8 +166,8 @@ class DataLoader3D(DataLoaderBase):
                 cropped_seg = self._data[j]['seg'][resizer_seg]
                 seg[i] = cropped_seg
         if self.to_tensor:
-            sample = {'data': self.to_tensor(data), 'seg' : self.to_tensor(seg), 'keys' : selected_keys}
-            return sample
+            data = torch.from_numpy(data)
+            seg = torch.from_numpy(data)
         return {'data' : data, 'seg' : seg, 'keys' : selected_keys}
 
     
