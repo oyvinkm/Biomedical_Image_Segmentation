@@ -71,7 +71,7 @@ AddGaussianNoise() """
 
 'Load training and test set, batch size may vary'
 train_loader= DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device)
-test_loader = DataLoader()
+test_loader = DataLoader(X_train, shuffle=True)
 
 
 """ for i, img in enumerate(train_loader):
