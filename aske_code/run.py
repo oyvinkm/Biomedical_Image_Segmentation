@@ -1,11 +1,14 @@
+from operator import delitem
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
-from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image
-from datasetModule import Set
+from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image, save_slice
+from preprocessing.datasetModule import Set
+from preprocessing.DataLoader3D import DataLoader3D
 from model import CNN
-from loss import DiceLoss, WeightedTverskyLoss, _BCEWithLogitsLoss
+from loss import DiceLoss, WeightedTverskyLoss, _BCEWithLogitsLoss, BinaryFocalLoss
 import torch
 import os
+import numpy as np
 from datetime import datetime
 import nibabel as nib
 import torch.nn as nn
@@ -15,12 +18,20 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #hyper parameters
 batch_size = 2
-learning_rate = 0.1
-num_epochs = 2
-base_features = 4
+learning_rate = 0.01
+num_epochs = 1
+base_features = 2
+patch_size = (128,128,128)
 TverskyAlpha = 0.9
 TverskyBeta = round(1 - TverskyAlpha, 1)
-LossFunc = _BCEWithLogitsLoss()
+LossFunc = BinaryFocalLoss()
+
+def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
+    np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+    save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))
+
 
 "Need to specify the local path on computer"
 dir_path = "Biomedical_Image_Segmentation/Cropped_Task3/"
@@ -36,36 +47,42 @@ train_set = crop_to_size(train_set, size)
 test_set = crop_to_size(test_set, size)
 
 'Load training and test set, batch size my vary'
-train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, shuffle=True, initialdialation=50)
 test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
 test_set = None
 train_set = None
 
-model = CNN(3,base_features=base_features)
+model = CNN(3, base_features=base_features)
 model = nn.DataParallel(model)
 model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 n_total_steps = len(train_loader)
+folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 
 'Run the CNN'
 losses = []
+epoch_losses = []
 for epoch in range(num_epochs):
+    loss_lst = []
     for i, image_set in enumerate(train_loader):
+        if epoch <= 50:
+            train_loader.UpdateDialPad(-1)
+        if epoch == 20:
+            train_loader.ToggleDialate()
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)
         outputs = model(image)
         loss = LossFunc(outputs, labels)
+        loss_lst.append(loss.item())
         losses.append(loss.item())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         if (i+1) % 1 == 0:
             print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
-
-#plt.plot(losses)
-#plt.savefig('Losses')
-print(losses)
+        ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder)
+    epoch_losses.append(np.mean(loss_lst))
 
 test_pred = iter(test_loader)
 test_img = test_pred.next()
