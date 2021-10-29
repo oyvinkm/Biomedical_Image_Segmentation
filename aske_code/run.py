@@ -43,7 +43,7 @@ data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isd
 train, test = train_test_split(data_folders)
 
 test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation')
-test_imgur = nib.load(os.path.join(os.getcwd(), "../Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
+test_imgur = nib.load(os.path.join(os.getcwd(), "/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
 
 'Splitting the data into 30% test and 70% training.'
 train_set, test_set = train_test_split(data_folders)
