@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
 #hyper parameters
 batch_size = 2
 learning_rate = 0.01
@@ -25,6 +26,7 @@ patch_size = (128,128,128)
 TverskyAlpha = 0.9
 TverskyBeta = round(1 - TverskyAlpha, 1)
 LossFunc = BinaryFocalLoss()
+folder = '{}_{}'.format('Loss_func', str(num_epochs))
 
 def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
     np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
@@ -44,7 +46,7 @@ test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation')
 test_imgur = nib.load(os.path.join(os.getcwd(), "../Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
 
 'Splitting the data into 30% test and 70% training.'
-train_set, test_set = train_test_split(train_test_split(data_folders))
+train_set, test_set = train_test_split(data_folders)
 
 print(train_set[:2])
 
@@ -52,11 +54,12 @@ print(dir_path)
 
 train_set = Set(dir_path, train_set)
 test_set = Set(dir_path, test_set)
+n_total_steps = len(train_set)
 
 
 
 'Load training and test set, batch size my vary'
-train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, shuffle=True, initialdialation=50)
+train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
 test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
 test_set = None
 train_set = None
@@ -66,7 +69,8 @@ model = nn.DataParallel(model)
 model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-n_total_steps = len(train_loader)
+#print("train_loader is =", train_loader)
+#n_total_steps = len(train_set)
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 
 'Run the CNN'
@@ -90,7 +94,7 @@ for epoch in range(num_epochs):
         optimizer.step()
         if (i+1) % 1 == 0:
             print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
-        ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder)
+        ContinuoslySaving(epoch, losses, folder_path, outputs, folder)
     epoch_losses.append(np.mean(loss_lst))
 
 test_pred = iter(test_loader)

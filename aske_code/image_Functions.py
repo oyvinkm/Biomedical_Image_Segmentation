@@ -3,11 +3,11 @@ import numpy as np
 import torchio as tio
 import nibabel as nib
 
-def show_slices(slices):
+def show_slices(slices, color = 'gray'):
    """ Function to display row of image slices """
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, cmap='gray', origin="lower")
+       axes[i].imshow(slice.T, cmap=color, origin="lower")
 def slicing(img, x : int = 100, y : int = 150, z : int = 80):
     slice_0 = img[100, :, :]
     slice_1 = img[:, 150, :]
@@ -20,7 +20,7 @@ def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
     slice_0 = img[size[0], :, :]
     slice_1 = img[:, size[1], :]
     slice_2 = img[:, :, size[2]]
-    show_slices([slice_0, slice_1, slice_2], color = cmap)
+    show_slices([slice_0, slice_1, slice_2], color=cmap)
     plt.suptitle("Center slices for EPI image" ) 
     plt.savefig(folder_name)
 
