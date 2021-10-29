@@ -16,6 +16,14 @@ def slicing(img, x : int = 100, y : int = 150, z : int = 80):
     plt.suptitle("Center slices for EPI image") 
     plt.show()
 
+def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
+    slice_0 = img[size[0], :, :]
+    slice_1 = img[:, size[1], :]
+    slice_2 = img[:, :, size[2]]
+    show_slices([slice_0, slice_1, slice_2], color = cmap)
+    plt.suptitle("Center slices for EPI image" ) 
+    plt.savefig(folder_name)
+
 def extract_brain_region(image, brain_mask, seg, background=0.):
 	''' find the boundary of the brain region, return the resized brain image and the index of the boundaries'''    
 	brain = np.where(brain_mask != background)
