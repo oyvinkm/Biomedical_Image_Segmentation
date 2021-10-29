@@ -5,6 +5,9 @@ from loss import _BCEWithLogitsLoss
 inp = torch.randn(1, requires_grad=True)
 tar = torch.empty(1).random_(2)
 
+print(inp)
+print(tar)
+
 loss = F.binary_cross_entropy_with_logits(inp,tar)
 lossman = _BCEWithLogitsLoss()
 

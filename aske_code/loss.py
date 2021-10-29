@@ -45,8 +45,15 @@ class _BCEWithLogitsLoss(nn.Module):
         super(_BCEWithLogitsLoss, self).__init__()
     
     def forward(self, input, target):
-        input = input.view(-1)
-        target = target.view(-1)
-        p1 = target*(logsigmoid(input))
-        p0 = (1-target)*math.log(1-torch.sigmoid(input))
-        return -1 * (p1 + p0)
+        input = abs(input.view(-1))
+        target = abs(target.view(-1))
+        m = Softmax(dim=0)
+        p = m(input)
+        y = m(target)
+        print("math.log(p)", math.log(p))
+        print("math.log(y)", math.log(y))
+     
+        val = y*math.log(p) + (1-y)*math.log(1-p)
+        print(val)
+
+        return val
