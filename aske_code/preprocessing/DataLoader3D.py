@@ -167,7 +167,7 @@ class DataLoader3D(DataLoaderBase):
                 seg[i] = cropped_seg
         if self.to_tensor:
             data = torch.from_numpy(data)
-            seg = torch.from_numpy(data)
+            seg = torch.from_numpy(seg)
         return {'data' : data, 'seg' : seg, 'keys' : selected_keys}
 
     
