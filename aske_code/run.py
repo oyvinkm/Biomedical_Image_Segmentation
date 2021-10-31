@@ -41,22 +41,16 @@ sub_dir = 'crop_sub-2'
 
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
 train, test = train_test_split(data_folders)
-
-test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation')
-test_imgur = nib.load(os.path.join(os.getcwd(), "/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz"))
+test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
+print("test_path = ", test_path)
+test_imgur = nib.load(test_path)
 
 'Splitting the data into 30% test and 70% training.'
 train_set, test_set = train_test_split(data_folders)
 
-print(train_set[:2])
-
-print(dir_path)
-
 train_set = Set(dir_path, train_set)
 test_set = Set(dir_path, test_set)
 n_total_steps = len(train_set)
-
-
 
 'Load training and test set, batch size my vary'
 train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
