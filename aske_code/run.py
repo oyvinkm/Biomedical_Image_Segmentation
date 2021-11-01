@@ -27,6 +27,7 @@ TverskyAlpha = 0.9
 TverskyBeta = round(1 - TverskyAlpha, 1)
 LossFunc = BinaryFocalLoss()
 folder = '{}_{}'.format('Loss_func', str(num_epochs))
+n_total_steps = 1
 
 def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
     np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
@@ -50,11 +51,11 @@ train_set, test_set = train_test_split(data_folders)
 
 train_set = Set(dir_path, train_set)
 test_set = Set(dir_path, test_set)
-n_total_steps = len(train_set)
 
 'Load training and test set, batch size my vary'
 train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
-test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
+test_set = crop_to_size(test_set, (280, 352, 184))
+test_loader = DataLoader(dataset=test_set, batch_size=2, shuffle=False)
 test_set = None
 train_set = None
 
@@ -68,6 +69,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 
 'Run the CNN'
+n_total_steps = 1
 losses = []
 epoch_losses = []
 for epoch in range(num_epochs):
@@ -89,6 +91,8 @@ for epoch in range(num_epochs):
         if (i+1) % 1 == 0:
             print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
         ContinuoslySaving(epoch, losses, folder_path, outputs, folder)
+        if i >= n_total_steps-1:
+            break
     epoch_losses.append(np.mean(loss_lst))
 
 test_pred = iter(test_loader)
