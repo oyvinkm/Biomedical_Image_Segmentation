@@ -26,6 +26,9 @@ class WeightedTverskyLoss(nn.Module):
         self.alpha = weight[0]
         self.beta = weight[1]
 
+    def get_name():
+        return "WeightedTversky"
+
     def forward(self, input, target):
         input = input.view(-1)
         target = target.view(-1)
@@ -62,6 +65,9 @@ class BinaryFocalLoss(nn.Module):
         self.reduction = reduction
 
         assert self.reduction in ['none', 'mean', 'sum']
+
+    def get_name():
+        return "BinaryFocalLoss"
 
     def forward(self, output, target):
         #prob = torch.sigmoid(output)
