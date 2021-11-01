@@ -2,6 +2,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 import torchio as tio
 import nibabel as nib
+import os
+
+from torchio.transforms import transform
 
 def show_slices(slices, color = 'gray'):
    """ Function to display row of image slices """
@@ -53,9 +56,11 @@ def crop_images_to_brain(data_set):
     return data_set
 
 def crop_to_size(set, size):
-    for i in range(len(set)):
-        transform = tio.CropOrPad((size))
-        set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
+    transform = tio.CropOrPad((size))
+    shape = set['data'].shape
+    for b in range(shape[0]):
+        set['data'][b] = transform(set['data'][b])
+        set['seg'][b] = transform(set['seg'][b])
     return set
 
 def save_image(data, affine, name="test.nii.gz"):

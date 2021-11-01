@@ -15,7 +15,10 @@ import torch.nn as nn
 from matplotlib import pyplot as plt
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz') if torch.cuda.is_available() else os.path.join(os.getcwd(), '/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
+cluster_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
+pc_path = os.path.join(os.getcwd(), 'Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
+test_path = cluster_path if torch.cuda.is_available() else pc_path
+
 
 #hyper parameters
 batch_size = 2
@@ -35,8 +38,6 @@ sub_dir = 'crop_sub-2'
 
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
 train, test = train_test_split(data_folders)
-#test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
-print("test_path = ", test_path)
 test_imgur = nib.load(test_path)
 
 'Splitting the data into 30% test and 70% training.'
@@ -47,8 +48,8 @@ test_set = Set(dir_path, test_set)
 
 'Load training and test set, batch size my vary'
 train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
-test_set = crop_to_size(test_set, (280, 352, 184))
-test_loader = DataLoader(dataset=test_set, batch_size=2, shuffle=False)
+#test_set = crop_to_size(test_set, (280, 352, 184))
+test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 test_set = None
 train_set = None
 
@@ -57,8 +58,6 @@ model = nn.DataParallel(model)
 model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-#print("train_loader is =", train_loader)
-#n_total_steps = len(train_set)
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 
 'Run the CNN'
@@ -88,10 +87,11 @@ for epoch in range(num_epochs):
             break
     epoch_losses.append(np.mean(loss_lst))
 
-test_pred = iter(test_loader)
+"""test_pred = iter(test_loader)
 test_img = test_pred.next()
+test_img = crop_to_size(test_img, (test_img['data'].shape[2], test_img['data'].shape[3], test_img['data'].shape[4]))
 
 prediction = model(test_img['data'].to(device))
 time = datetime.now().replace(microsecond=0).strftime("kl%H%M%S-%d.%m.%Y")
 name = str(num_epochs)+"epoch"+str(TverskyAlpha)+"-"+str(TverskyBeta)+time+".nii.gz"
-save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine, name=name)
+save_image(torch.squeeze(prediction.detach()).cpu().numpy(), test_imgur.affine, name=name)"""
