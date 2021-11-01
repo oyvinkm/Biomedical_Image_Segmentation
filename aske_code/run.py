@@ -1,7 +1,7 @@
 from operator import delitem
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import train_test_split
-from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image, save_slice
+from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_image, save_slice, ContinuoslySaving
 from preprocessing.datasetModule import Set
 from preprocessing.DataLoader3D import DataLoader3D
 from model import CNN
@@ -15,7 +15,7 @@ import torch.nn as nn
 from matplotlib import pyplot as plt
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz') if torch.cuda.is_available() else os.path.join(os.getcwd(), '/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
 
 #hyper parameters
 batch_size = 2
@@ -28,20 +28,13 @@ TverskyBeta = round(1 - TverskyAlpha, 1)
 LossFunc = BinaryFocalLoss()
 folder = '{}_{}'.format('Loss_func', str(num_epochs))
 
-def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
-    np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
-    if not os.path.exists(folder_path):
-        os.mkdir(folder_path)
-    save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))
-
-
 "Need to specify the local path on computer"
 dir_path = os.path.join(os.getcwd(), "Segmentations")
 sub_dir = 'crop_sub-2'
 
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
 train, test = train_test_split(data_folders)
-test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
+#test_path = os.path.join(os.getcwd(), 'Biomedical_Image_Segmentation/Cropped_Task3/crop_sub-233/crop_sub-233_space-T1_desc-masked_T1.nii.gz')
 print("test_path = ", test_path)
 test_imgur = nib.load(test_path)
 

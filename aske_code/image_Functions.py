@@ -61,3 +61,9 @@ def crop_to_size(set, size):
 def save_image(data, affine, name="test.nii.gz"):
     cropped_img = nib.Nifti1Image(data, affine)
     nib.save(cropped_img, name)
+
+def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
+    np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+    save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))
