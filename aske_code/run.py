@@ -50,14 +50,14 @@ test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 test_set = None
 train_set = None
 
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 TverskyAlpha = 0.0
 for i in range(9):
 	model = CNN(3, base_features=base_features)
 	model = nn.DataParallel(model)
 	model.to(device)
-	
+	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
 	TverskyAlpha += 0.1
 	TverskyBeta = round(1 - TverskyAlpha, 1)
 	LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
