@@ -5,7 +5,7 @@ from image_Functions import slicing, crop_images_to_brain, crop_to_size, save_im
 from preprocessing.datasetModule import Set
 from preprocessing.DataLoader3D import DataLoader3D
 from model import CNN
-from loss import DiceLoss, WeightedTverskyLoss, _BCEWithLogitsLoss, BinaryFocalLoss
+from loss import DiceLoss, WeightedTverskyLoss, _BCEWithLogitsLoss, BinaryFocalLoss, TverskyLoss
 import torch
 import os
 import numpy as np
@@ -23,10 +23,11 @@ test_path = cluster_path if torch.cuda.is_available() else pc_path
 #hyper parameters
 batch_size = 2
 learning_rate = 0.1
-num_epochs = 75
+num_epochs = 10
 base_features = 2
-patch_size = (128,128,128)
+patch_size = (64, 64, 64)
 n_total_steps = 1
+num_dialationiteration = 50
 
 "Need to specify the local path on computer"
 dir_path = os.path.join(os.getcwd(), "Segmentations")
@@ -43,14 +44,14 @@ train_set = Set(dir_path, train_set[:1])
 test_set = Set(dir_path, test_set)
 
 'Load training and test set, batch size my vary'
-train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
+train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=num_dialationiteration)
 test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 test_set = None
 train_set = None
 
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 TverskyAlpha = 0.0
-for i in range(9):
+for i in range(5):
 	model = CNN(3, base_features=base_features)
 	model = nn.DataParallel(model)
 	model.to(device)
@@ -59,7 +60,7 @@ for i in range(9):
 	TverskyAlpha += 0.1
 	TverskyBeta = round(1 - TverskyAlpha, 1)
 	print("alpha =", TverskyAlpha, "Beta =", TverskyBeta)
-	LossFunc = BinaryFocalLoss()
+	LossFunc = TverskyLoss((TverskyAlpha, TverskyBeta))
 	folder = '{}_{}_{}'.format(LossFunc.get_name(), str(num_epochs), str(TverskyAlpha))
 	'Run the CNN'
 	losses = []
@@ -82,7 +83,7 @@ for i in range(9):
 			optimizer.step()
 			if (i+1) % 1 == 0:
 				print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
-			ContinuoslySaving(epoch, losses, folder_path, outputs, folder)
+			ContinuoslySaving(epoch, losses, folder_path, outputs, folder, size=(32,32,32))
 			if i >= n_total_steps-1:
 				break
 		epoch_losses.append(np.mean(loss_lst))

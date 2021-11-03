@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from torch.nn import Softmax
 from torch.nn.functional import logsigmoid
+import torch.nn.functional as F
 import math
 
 class DiceLoss(nn.Module):
@@ -18,6 +19,33 @@ class DiceLoss(nn.Module):
         dice = (2.*intersection + smooth)/(inputs.sum()**2 + targets.sum()**2 + smooth)
 
         return 1 - dice
+
+class TverskyLoss(nn.Module):
+    def __init__(self, weight : tuple = (0.5, 0.5)):
+        super(TverskyLoss, self).__init__()
+        self.alpha = weight[0]
+        self.beta = weight[1]
+    
+    def get_name(self):
+        return "TverskyLoss"
+
+    def forward(self, inputs, targets, smooth=0):
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = torch.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        #True Positives, False Positives & False Negatives
+        TP = (inputs * targets).sum()    
+        FP = ((1-targets) * inputs).sum()
+        FN = (targets * (1-inputs)).sum()
+       
+        Tversky = (TP + smooth) / (TP + self.alpha*FP + self.beta*FN + smooth)  
+        
+        return 1 - Tversky
 
 class WeightedTverskyLoss(nn.Module):
     """Tversky loss function from arXiv:1803.11078v1"""
