@@ -23,7 +23,7 @@ test_path = cluster_path if torch.cuda.is_available() else pc_path
 #hyper parameters
 batch_size = 2
 learning_rate = 0.1
-num_epochs = 50
+num_epochs = 75
 base_features = 2
 patch_size = (128,128,128)
 n_total_steps = 1
@@ -59,7 +59,7 @@ for i in range(9):
 	TverskyAlpha += 0.1
 	TverskyBeta = round(1 - TverskyAlpha, 1)
 	print("alpha =", TverskyAlpha, "Beta =", TverskyBeta)
-	LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
+	LossFunc = BinaryFocalLoss()
 	folder = '{}_{}_{}'.format(LossFunc.get_name(), str(num_epochs), str(TverskyAlpha))
 	'Run the CNN'
 	losses = []
