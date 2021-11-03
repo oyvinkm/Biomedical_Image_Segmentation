@@ -21,6 +21,7 @@ class DiceLoss(nn.Module):
         return 1 - dice
 
 class TverskyLoss(nn.Module):
+    """https://www.kaggle.com/bigironsphere/loss-function-library-keras-pytorch"""
     def __init__(self, weight : tuple = (0.5, 0.5)):
         super(TverskyLoss, self).__init__()
         self.alpha = weight[0]
