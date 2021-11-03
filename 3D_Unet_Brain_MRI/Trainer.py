@@ -88,7 +88,7 @@ class NetworkTrainer():
     def create_loss_output(self):
         np.savetxt(os.path.join(self.output_folder, 'Loss/Train_Loss.csv'), self.train_loss, 
                             delimiter=",", fmt='%s')
-        np.savetxt(os.path.join(self.output_folder, 'Loss/Train_Loss.csv'), self.val_loss, 
+        np.savetxt(os.path.join(self.output_folder, 'Loss/Validation_Loss.csv'), self.val_loss, 
                             delimiter=",", fmt='%s')                 
         plt.plot(self.train_loss)
         plt.ylabel('Loss')
