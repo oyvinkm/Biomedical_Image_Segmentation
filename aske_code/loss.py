@@ -26,7 +26,7 @@ class WeightedTverskyLoss(nn.Module):
         self.alpha = weight[0]
         self.beta = weight[1]
 
-    def get_name():
+    def get_name(self):
         return "WeightedTversky"
 
     def forward(self, input, target):
@@ -66,7 +66,7 @@ class BinaryFocalLoss(nn.Module):
 
         assert self.reduction in ['none', 'mean', 'sum']
 
-    def get_name():
+    def get_name(self):
         return "BinaryFocalLoss"
 
     def forward(self, output, target):

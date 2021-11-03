@@ -26,7 +26,7 @@ learning_rate = 0.1
 num_epochs = 10
 base_features = 2
 patch_size = (128,128,128)
-n_total_steps = 3
+n_total_steps = 1
 
 "Need to specify the local path on computer"
 dir_path = os.path.join(os.getcwd(), "Segmentations")
@@ -39,7 +39,8 @@ test_imgur = nib.load(test_path)
 'Splitting the data into 30% test and 70% training.'
 train_set, test_set = train_test_split(data_folders)
 
-train_set = Set(dir_path, train_set)
+train_set = Set(dir_path, train_set[:1])
+print(train_set)
 test_set = Set(dir_path, test_set)
 
 'Load training and test set, batch size my vary'
@@ -49,14 +50,14 @@ test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 test_set = None
 train_set = None
 
-model = CNN(3, base_features=base_features)
-model = nn.DataParallel(model)
-model.to(device)
-
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 TverskyAlpha = 0.0
 for i in range(9):
+	model = CNN(3, base_features=base_features)
+	model = nn.DataParallel(model)
+	model.to(device)
+	
 	TverskyAlpha += 0.1
 	TverskyBeta = round(1 - TverskyAlpha, 1)
 	LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
@@ -65,27 +66,27 @@ for i in range(9):
 	losses = []
 	epoch_losses = []
 	for epoch in range(num_epochs):
-	    loss_lst = []
-	    for i, image_set in enumerate(train_loader):
-		if epoch <= 50:
-		    train_loader.UpdateDialPad(-1)
-		if epoch == 20:
-		    train_loader.ToggleDialate()
-		image = image_set['data'].to(device)
-		labels = image_set['seg'].to(device)
-		outputs = model(image)
-		loss = LossFunc(outputs, labels)
-		loss_lst.append(loss.item())
-		losses.append(round(loss.item(), 2))
-		optimizer.zero_grad()
-		loss.backward()
-		optimizer.step()
-		if (i+1) % 1 == 0:
-		    print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
-		ContinuoslySaving(epoch, losses, folder_path, outputs, folder)
-		if i >= n_total_steps-1:
-		    break
-	    epoch_losses.append(np.mean(loss_lst))
+		loss_lst = []
+		for i, image_set in enumerate(train_loader):
+			if epoch <= 50:
+				train_loader.UpdateDialPad(-1)
+			if epoch == 20:
+				train_loader.ToggleDialate()
+			image = image_set['data'].to(device)
+			labels = image_set['seg'].to(device)
+			outputs = model(image)
+			loss = LossFunc(outputs, labels)
+			loss_lst.append(loss.item())
+			losses.append(round(loss.item(), 2))
+			optimizer.zero_grad()
+			loss.backward()
+			optimizer.step()
+			if (i+1) % 1 == 0:
+				print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
+			ContinuoslySaving(epoch, losses, folder_path, outputs, folder)
+			if i >= n_total_steps-1:
+				break
+		epoch_losses.append(np.mean(loss_lst))
 
 """test_pred = iter(test_loader)
 test_img = test_pred.next()
