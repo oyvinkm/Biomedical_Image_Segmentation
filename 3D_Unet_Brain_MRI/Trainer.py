@@ -78,16 +78,12 @@ class NetworkTrainer():
         return 0
 
 
-    def save_slice_epoch(self, epoch):
-        batch = next(self.val_loader)
-        img, seg = batch['data'].to(self.device), batch['seg'].to(self.device)
-        with torch.no_grad():
-            output = self.network(img)
+    def save_slice_epoch(self,output, seg, epoch):
         save_slice(output[0][0].detach().cpu().numpy(), 
                     os.path.join(self.output_folder, f'Slices/seg_{epoch+1}.png'))
         save_slice(seg[0][0].detach().cpu().numpy(), 
                     os.path.join(self.output_folder, f'Slices/GT_{epoch+1}.png'))
-
+        plt.close()
 
     def create_loss_output(self):
         np.savetxt(os.path.join(self.output_folder, 'Loss/Train_Loss.csv'), self.train_loss, 
@@ -101,6 +97,7 @@ class NetworkTrainer():
         plt.savefig(os.path.join(self.output_folder, 
                     os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
+
         plt.plot(self.val_loss)
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
@@ -123,7 +120,7 @@ class NetworkTrainer():
         self.val_loss.append(np.mean(val_loss))
 
     def get_test_loss(self):
-        
+
         return 0
 
 
@@ -145,7 +142,7 @@ class NetworkTrainer():
                 loss.backward()
                 self.optimizer.step()
                 if i == self.num_batches - 1:
-                    self.save_slice_epoch(epoch)
+                    self.save_slice_epoch(outputs, labels, epoch)
                     break
             self.validate()
             self.train_loss.append(np.mean(loss_here))
