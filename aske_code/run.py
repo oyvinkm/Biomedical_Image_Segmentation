@@ -23,7 +23,7 @@ test_path = cluster_path if torch.cuda.is_available() else pc_path
 #hyper parameters
 batch_size = 2
 learning_rate = 0.1
-num_epochs = 10
+num_epochs = 50
 base_features = 2
 patch_size = (128,128,128)
 n_total_steps = 1
@@ -40,12 +40,10 @@ test_imgur = nib.load(test_path)
 train_set, test_set = train_test_split(data_folders)
 
 train_set = Set(dir_path, train_set[:1])
-print(train_set)
 test_set = Set(dir_path, test_set)
 
 'Load training and test set, batch size my vary'
 train_loader = DataLoader3D(train_set, patch_size, BATCH_SIZE=batch_size, to_tensor=True, device=device, iterations=50)
-#test_set = crop_to_size(test_set, (280, 352, 184))
 test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 test_set = None
 train_set = None
@@ -60,6 +58,7 @@ for i in range(9):
 
 	TverskyAlpha += 0.1
 	TverskyBeta = round(1 - TverskyAlpha, 1)
+	print("alpha =", TverskyAlpha, "Beta =", TverskyBeta)
 	LossFunc = WeightedTverskyLoss((TverskyAlpha, TverskyBeta))
 	folder = '{}_{}_{}'.format(LossFunc.get_name(), str(num_epochs), str(TverskyAlpha))
 	'Run the CNN'
@@ -70,7 +69,7 @@ for i in range(9):
 		for i, image_set in enumerate(train_loader):
 			if epoch <= 50:
 				train_loader.UpdateDialPad(-1)
-			if epoch == 20:
+			if epoch == 50:
 				train_loader.ToggleDialate()
 			image = image_set['data'].to(device)
 			labels = image_set['seg'].to(device)

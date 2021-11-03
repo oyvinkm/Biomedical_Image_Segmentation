@@ -106,7 +106,6 @@ class DataLoader3D(DataLoaderBase):
 
 
     def generate_train_batch(self):
-        print('generating train batch')
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
         data = np.zeros(self.data_shape, dtype=np.float32)
@@ -132,7 +131,6 @@ class DataLoader3D(DataLoaderBase):
                 # If we need to choose on of two lacunes
                 if (x_tresh_gt or y_tresh_gt or z_tresh_gt):
                     crop_choice = np.random.choice(['min', 'max'],1)
-                    print(crop_choice)
                     lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0, partial_patch=crop_choice)
                     lb_y, ub_y = self.get_bbox_axis(min_y , max_y, data_shape, 1, partial_patch=crop_choice)
                     lb_z, ub_z = self.get_bbox_axis(min_z , max_z, data_shape, 2, partial_patch=crop_choice)

@@ -68,7 +68,7 @@ def save_image(data, affine, name="test.nii.gz"):
     nib.save(cropped_img, name)
 
 def ContinuoslySaving(epoch, loss_here, folder_path, outputs, folder):
-    np.savetxt((f"file_name_{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
     if not os.path.exists(folder): #folderpath
         os.mkdir(folder) #folderpath
+    np.savetxt((f"{folder}/loss_epoch:{epoch}.csv"), np.array(loss_here), delimiter=",", fmt='%s')
     save_slice(outputs[0][0].detach().cpu().numpy(), os.path.join(folder, str(epoch)))

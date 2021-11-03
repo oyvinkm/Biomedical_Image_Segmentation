@@ -12,7 +12,6 @@ class CNN(nn.Module):
         self.upconv = nn.ConvTranspose3d
         self.askconv = nn.ConvTranspose3d
 
-
         self.test_layer = self._conv_layer_set(self.in_channels,1)
         #Aske test network
         #Layer encode 
