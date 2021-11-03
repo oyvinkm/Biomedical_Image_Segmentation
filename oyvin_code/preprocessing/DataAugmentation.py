@@ -2,6 +2,7 @@ import abc
 from warnings import warn
 from typing import Optional, Sequence, Union, Tuple
 import numpy as np
+from numpy.lib.type_check import real
 from preprocessing.augmentation_funcs import (  augment_gaussian_noise, 
                                                 augment_rician_noise, 
                                                 map_spatial_axes, 
@@ -12,7 +13,6 @@ import random
 from scipy.ndimage import rotate
 from scipy.spatial.transform import Rotation as R
 import torch
-
 
 
 class AddGaussianNoise(object):
@@ -44,36 +44,41 @@ class AddRicianNoise(object):
 
 
 class RotateRandomTransform(object):
-    def __init__(self, angle = None, reshape = False, data_key='data', seg_key = 'seg', output=None):
+    def __init__(self, angle = None, reshape = False, data_key='data', seg_key = 'seg', output=None, prob : float = 1.):
         self.data_key = data_key
         self.seg_key = data_key
         self.output = output
         self.angle = angle
         self.reshape = reshape
+        self.prob = prob
 
     def __call__(self, sample):
-        if self.angle is None:
-            self.angle = np.random.uniform(1, 89)
-        d_shape, s_shape = sample[self.data_key].shape, sample[self.seg_key].shape
-        for c in range(d_shape[0]):
-            sample[self.data_key][c] = rotate(sample[self.data_key][c], self.angle, reshape = self.reshape, order = 4)
-        for d in range(s_shape[0]):
-            sample[self.seg_key][d] = rotate(sample[self.seg_key][d], self.angle, reshape=self.reshape, order = 4)
-        return sample
+        if np.random.uniform() < self.prob:
+            axis = np.random.choice(2,2,replace=False)
+            if self.angle is None:
+                self.angle = np.random.uniform(1, 89)
+            d_shape, s_shape = sample[self.data_key].shape, sample[self.seg_key].shape
+            for c in range(d_shape[0]):
+                sample[self.data_key][c] = rotate(sample[self.data_key][c],  self.angle, axes=(axis[0], axis[1]), reshape = self.reshape, order = 4)
+            for d in range(s_shape[0]):
+                sample[self.seg_key][d] = rotate(sample[self.seg_key][d], self.angle,axes=(axis[0], axis[1]), reshape=self.reshape, order = 4)
+            return sample
 
 class FlipTransform(object):
-    def __init__(self, spatial_axis: Optional[Union[Sequence[int], int]] = None, data_key = 'data', seg_key = 'seg') -> None:
+    def __init__(self, spatial_axis: Optional[Union[Sequence[int], int]] = None, data_key = 'data', seg_key = 'seg', prob : float = 1.) -> None:
         self.spatial_axis = spatial_axis
         self.data_key = data_key
         self.seg_key = seg_key
+        self.prob = prob
 
     def __call__(self, sample):
-        d_shape, s_shape = sample[self.data_key].shape, sample[self.seg_key].shape
-        for c in range(d_shape[0]):
-            sample[self.data_key][c] = np.ascontiguousarray(np.flip(sample[self.data_key][c], map_spatial_axes(sample[self.data_key][c].ndim, self.spatial_axis))) 
-        for d in range(s_shape[0]):
-            sample[self.seg_key][d] = np.ascontiguousarray(np.flip(sample[self.seg_key][d], map_spatial_axes(sample[self.seg_key][d].ndim, self.spatial_axis)))
-        return sample
+        if np.random.uniform() < self.prob:
+            d_shape, s_shape = sample[self.data_key].shape, sample[self.seg_key].shape
+            for c in range(d_shape[0]):
+                sample[self.data_key][c] = np.ascontiguousarray(np.flip(sample[self.data_key][c], map_spatial_axes(sample[self.data_key][c].ndim, self.spatial_axis))) 
+            for d in range(s_shape[0]):
+                sample[self.seg_key][d] = np.ascontiguousarray(np.flip(sample[self.seg_key][d], map_spatial_axes(sample[self.seg_key][d].ndim, self.spatial_axis)))
+            return sample
 
 class ToTensor(object):
 
@@ -101,6 +106,7 @@ class SpatialTransformsRotate(object):
         self.border_cval_seg = border_cval_seg
         self.p_per_channel = p_per_channel
         self.p_per_axis = p_per_axis
+
     def calc(self, sample):
         data = sample[self.data_key]
         seg = sample[self.seg_key]
@@ -109,12 +115,8 @@ class SpatialTransformsRotate(object):
         seg_result = np.zeros(s_shape, dtype=np.float32)
         data_result = np.zeros(d_shape, dtype=np.float32)
         img_shape = ((d_shape[1], d_shape[2], d_shape[3]))
-        dim = len(img_shape)
-        print(img_shape)
 
         coords = do_rotation(shape = img_shape)
-        print(coords.shape)
-        print(len(data.shape))
         for channel_id in range(data.shape[0]):
             data_result[channel_id] = interpolate_img(data[channel_id], 
                                                     coords, self.order,

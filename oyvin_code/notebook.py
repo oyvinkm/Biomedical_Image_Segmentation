@@ -55,32 +55,20 @@ dir_path = os.path.join(os.getcwd(), "Cropped_Task3/Segmentations")
 sub_dir = 'crop_sub-2'
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder)) and sub_dir in folder])
 train, test = train_test_split(data_folders)
-print(train[:2])
 
 X_train = Set(dir_path, train)
 X_test = Set(dir_path, test)
+X_test = crop_to_size(X_test, (280, 352, 184))
+
 """ FlipTransform(), 
 AddRicianNoise(),
 AddGaussianNoise() """
-#X_train = Set(dir_path, train)
-#X_test = Set(dir_path, test)
-
-
-
-
+ 
 
 'Load training and test set, batch size may vary'
 train_loader= DataLoader3D(X_train, patch_size, BATCH_SIZE=batch_size, device=device, to_tensor=True)
+
 test_loader = DataLoader(X_train, shuffle=True)
-
-
-""" for i, img in enumerate(train_loader):
-    save_slice(img['seg'][0][0], ('seg_sub2' + str(i) +'.png'))
-    if not train_loader.GetDialate():
-        train_loader.EnableDialate()
-    train_loader.UpdateDialPad(1)
-    if i == 15:
-        break """
 
 
 'Run the CNN'
@@ -99,8 +87,8 @@ for epoch in range(num_epochs):
     loss_here = []
     if epoch <= 20 and epoch % 2 == 0:
         train_loader.UpdateDialPad(-1)
-    elif epoch > 20:
-        train_loader.EnableDialate     
+    elif epoch == 20:
+        train_loader.EnableDialate()     
     for i, image_set in enumerate(train_loader):
         image = image_set['data'].to(device)
         labels = image_set['seg'].to(device)

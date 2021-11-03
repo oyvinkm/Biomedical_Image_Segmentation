@@ -12,8 +12,8 @@ import torch
 
 class DataLoader3D(DataLoaderBase):
 
-    def __init__(self, data, patch_size, BATCH_SIZE, device, pad_mode = 'edge',  
-                    pad_kwargs_data = None, to_tensor = None, dialate : bool = False, iterations = 1):
+    def __init__(self, data, patch_size, BATCH_SIZE, pad_mode = 'edge',  
+                    pad_kwargs_data = None, to_tensor = True, dialate : bool = False, iterations = 1, alpha : float = 0.6):
         
         super(DataLoader3D, self).__init__(data, BATCH_SIZE, None)
         if pad_kwargs_data is None:
@@ -28,6 +28,7 @@ class DataLoader3D(DataLoaderBase):
         self.to_tensor = to_tensor
         self.device = device
         self.dialate = dialate
+        self.alpha = alpha
         self.dialeteshape = ndimage.generate_binary_structure(rank=4, connectivity=1)
 
     def get_seg_position(self, indx):
@@ -36,17 +37,16 @@ class DataLoader3D(DataLoaderBase):
             seg_pos = None
         return seg_pos
 
-    def EnableDialate(self):
-        if self.dialate:
-            self.dialate = False
-        else: 
-            self.dialate = True
+    def ToggleDialate(self, dialate : bool):
+        self.dialate = dialate
 
     def GetDialate(self):
         return self.dialate
 
     def UpdateDialPad(self, iterations: int):
-        self.iterations += iterations
+        if self.iterations > 1:
+            if np.random.uniform() > self.alpha:
+                self.iterations += iterations
 
     def get_keys(self):
         '''Don't use, it's super slow'''
@@ -106,7 +106,6 @@ class DataLoader3D(DataLoaderBase):
 
 
     def generate_train_batch(self):
-        print('generating train batch')
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
         data = np.zeros(self.data_shape, dtype=np.float32)
@@ -132,7 +131,6 @@ class DataLoader3D(DataLoaderBase):
                 # If we need to choose on of two lacunes
                 if (x_tresh_gt or y_tresh_gt or z_tresh_gt):
                     crop_choice = np.random.choice(['min', 'max'],1)
-                    print(crop_choice)
                     lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0, partial_patch=crop_choice)
                     lb_y, ub_y = self.get_bbox_axis(min_y , max_y, data_shape, 1, partial_patch=crop_choice)
                     lb_z, ub_z = self.get_bbox_axis(min_z , max_z, data_shape, 2, partial_patch=crop_choice)
@@ -167,7 +165,7 @@ class DataLoader3D(DataLoaderBase):
                 seg[i] = cropped_seg
         if self.to_tensor:
             data = torch.from_numpy(data)
-            seg = torch.from_numpy(data)
+            seg = torch.from_numpy(seg)
         return {'data' : data, 'seg' : seg, 'keys' : selected_keys}
 
     

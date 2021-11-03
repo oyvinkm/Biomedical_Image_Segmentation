@@ -8,6 +8,7 @@ def show_slices(slices, color = 'gray'):
    fig, axes = plt.subplots(1, len(slices))
    for i, slice in enumerate(slices):
        axes[i].imshow(slice.T, cmap=color, origin="lower")
+
 def slicing(img, x,y,z, cmap = 'gray'):
     slice_0 = img[x, :, :]
     slice_1 = img[:, y, :]
@@ -23,6 +24,7 @@ def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
     show_slices([slice_0, slice_1, slice_2], color = cmap)
     plt.suptitle("Center slices for EPI image" ) 
     plt.savefig(folder_name)
+    plt.close()
 
 def extract_brain_region(image, brain_mask, seg, background=0.):
 	''' find the boundary of the brain region, return the resized brain image and the index of the boundaries'''    
