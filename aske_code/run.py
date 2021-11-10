@@ -22,11 +22,11 @@ test_path = cluster_path if torch.cuda.is_available() else pc_path
 
 #hyper parameters
 batch_size = 2
-learning_rate = 0.1
-num_epochs = 10
-base_features = 2
+learning_rate = 3e-4
+num_epochs = 75
+base_features = 4
 patch_size = (64, 64, 64)
-n_total_steps = 1
+n_total_steps = 10
 num_dialationiteration = 50
 
 "Need to specify the local path on computer"
@@ -40,7 +40,7 @@ test_imgur = nib.load(test_path)
 'Splitting the data into 30% test and 70% training.'
 train_set, test_set = train_test_split(data_folders)
 
-train_set = Set(dir_path, train_set[:1])
+train_set = Set(dir_path, train_set)
 test_set = Set(dir_path, test_set)
 
 'Load training and test set, batch size my vary'
@@ -51,13 +51,13 @@ train_set = None
 
 folder_path = os.path.join(os.getcwd(),'{}_{}'.format('Loss_func', str(num_epochs)))
 TverskyAlpha = 0.0
-for i in range(5):
+for i in range(9):
 	model = CNN(3, base_features=base_features)
 	model = nn.DataParallel(model)
 	model.to(device)
 	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-	TverskyAlpha += 0.1
+	TverskyAlpha = round(TverskyAlpha + 0.1, 1)
 	TverskyBeta = round(1 - TverskyAlpha, 1)
 	print("alpha =", TverskyAlpha, "Beta =", TverskyBeta)
 	LossFunc = TverskyLoss((TverskyAlpha, TverskyBeta))
@@ -68,9 +68,9 @@ for i in range(5):
 	for epoch in range(num_epochs):
 		loss_lst = []
 		for i, image_set in enumerate(train_loader):
-			if epoch <= 50:
+			if epoch <= num_dialationiteration:
 				train_loader.UpdateDialPad(-1)
-			if epoch == 50:
+			if epoch == num_dialationiteration:
 				train_loader.ToggleDialate()
 			image = image_set['data'].to(device)
 			labels = image_set['seg'].to(device)
