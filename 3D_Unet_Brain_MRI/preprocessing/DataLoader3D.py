@@ -6,7 +6,8 @@ from collections import OrderedDict
 import numpy as np
 from scipy.ndimage import binary_fill_holes
 from scipy import ndimage
-
+from typing import Any, List, Optional, Sequence, Union, Tuple
+import random
 import torch
 
 
@@ -63,48 +64,39 @@ class DataLoader3D(DataLoaderBase):
     def get_data_length(self):
         return len(self._data)
 
-    def get_bbox_axis(self, min, max, shape, axis : int, partial_patch = None): 
-        if partial_patch is not None:
-            assert partial_patch == 'min' or partial_patch == 'max', 'partial patch has to be either min or max'
-            if partial_patch == 'min':
-                new_min = min - self.patch_size[axis]//2
-                cut_min = new_min < 0
-                lb = new_min if not cut_min else 0
-                ub = min + self.patch_size[axis]//2 if not cut_min else min + self.patch_size[axis]//2 + np.abs(new_min)
-                assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
-                return lb, ub
-            else:
-                new_max = max + self.patch_size[axis]//2
-                cut_max = new_max > shape[axis]
-                ub = new_max if not cut_max else shape[axis]
-                lb = max - self.patch_size[axis]//2 if not cut_max \
-                        else max - self.patch_size[axis]//2 - (new_max - shape[axis])
-                assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
-                return lb, ub
-        else:
-            padder = (self.patch_size[axis] - (max - min))//2
-            new_min, new_max = min - padder, max + padder
-            cut_min, cut_max = new_min < 0, new_max > shape[axis]
-            if new_max - new_min != self.patch_size[axis]:
-                new_max += self.patch_size[axis] - (new_max - new_min)
-            if cut_min:
-                lb = 0
-                ub = new_max + np.abs(min - padder)
-                assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
-                return lb, ub
-            elif cut_max:
-                lb = new_min - (new_max - shape[axis])
-                ub = shape[axis]
-                assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb)  
-                return lb, ub
-            else:
-                lb = new_min
-                ub = new_max
-                assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb) 
-                return lb, ub
+    def get_random_center(self, shape, x : Tuple[int, int], y : Tuple[int,int], z : Tuple[int,int]):
+        c_x = x[1] - (x[1] - x[0])
+        c_y = y[1] - (y[1] - y[0])
+        c_z = z[1] - (z[1] - z[0])
+        center = np.array([c_x,c_y,c_z])
+        rand_vec = np.random.randint(32, size=3)
+        direction = 1 if random.random() < 0.5 else -1
+        new_center = center + direction * rand_vec
+        slicer = []
+        for i in range(3):
+            slicer.append(self.get_bbox_random(shape[i], new_center[i], i))
+            print(slicer[i])
+        resizer_data = (slice(0,3), slicer[0], slicer[1], slicer[2])
+        resizer_seg = (slice(0,1), slicer[0], slicer[1], slicer[2])
+        return resizer_data, resizer_seg
+
+    def get_bbox_random(self, shape, center_point : int, axis : int):
+        new_min = center_point - self.patch_size[axis] // 2
+        new_max = center_point + self.patch_size[axis] // 2
+        cut_min = new_min < 0
+        cut_max = new_max > shape
+        if cut_min:
+            lb = 0
+            ub = new_max + np.abs(new_min)
+            assert ub - lb == self.patch_size[axis], ('Diff has to be shape 128, ub: ', ub, ' lb: ', lb)
+        elif cut_max:
+            lb = new_min - (new_max - shape)
+            ub = shape
+        else: 
+            lb = new_min
+            ub = new_max
+        return slice(lb, ub)
         
-
-
     def generate_train_batch(self):
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
@@ -118,42 +110,56 @@ class DataLoader3D(DataLoaderBase):
             if seg_pos is not None:
                 min_x = int(np.min(seg_pos[0]))
                 max_x = int(np.max(seg_pos[0]))
+                x = (min_x, max_x)
                 min_y = int(np.min(seg_pos[1]))
                 max_y = int(np.max(seg_pos[1]))
+                y = (min_y, max_y)
                 min_z = int(np.min(seg_pos[2])) 
                 max_z = int(np.max(seg_pos[2]))
+                z = (min_z, max_z)
                 
                 #If true different between lacunes along x/y/z axis is greater than patch size
                 x_tresh_gt = max_x - min_x > self.patch_size[0]
                 y_tresh_gt = max_y - min_y > self.patch_size[1]
                 z_tresh_gt = max_z - min_z > self.patch_size[2]
 
-                # If we need to choose on of two lacunes
                 if (x_tresh_gt or y_tresh_gt or z_tresh_gt):
+                    # If we need to choose on of two lacune regions
                     crop_choice = np.random.choice(['min', 'max'],1)
-                    lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0, partial_patch=crop_choice)
-                    lb_y, ub_y = self.get_bbox_axis(min_y , max_y, data_shape, 1, partial_patch=crop_choice)
-                    lb_z, ub_z = self.get_bbox_axis(min_z , max_z, data_shape, 2, partial_patch=crop_choice)
+                    if crop_choice == 'min':
+                        print('min')
+                        x = (min_x, min_x + np.random.randomint(5))
+                        y = (min_y, min_y + np.random.randomint(5))
+                        z = (min_z, min_z + np.random.randomint(5))
+                        resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
 
+                    elif crop_choice == 'max':
+                        print('max')
+                        x = (max_x, max_x + np.random.randomint(5))
+                        y = (max_y, max_y + np.random.randomint(5))
+                        z = (max_z, max_z + np.random.randomint(5))
+                        resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
+                
                 else:
-                    lb_x, ub_x = self.get_bbox_axis(min_x , max_x, data_shape, 0)
-                    lb_y, ub_y = self.get_bbox_axis(min_y , max_y, data_shape, 1)
-                    lb_z, ub_z = self.get_bbox_axis(min_z , max_z, data_shape, 2)
-                resizer_data = (slice(0,3),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
-                resizer_seg = (slice(0,1),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
+                #The lacune regions fits in the patch
+                    resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
                 cropped_data = self._data[j]['data'][resizer_data]
                 data[i] = cropped_data
                 cropped_seg = self._data[j]['seg'][resizer_seg]
                 seg[i] = cropped_seg
+                if seg[i].sum() > 0:
+                    print('contains lacune')
+                else:
+                    print('does not contain lacune, but should')
                 if self.dialate:
                         dialated = ndimage.binary_dilation(seg[i], self.dialeteshape, iterations=self.iterations)
                         seg[i] = dialated
                         
             else: 
+                #Does not contain segmentation, so just doing a random crop
                 lb_x = np.random.randint(0, data_shape[0] - self.patch_size[0])
                 lb_y = np.random.randint(0, data_shape[1] - self.patch_size[1])
                 lb_z = np.random.randint(0, data_shape[2] - self.patch_size[2])
-                
                 ub_x = lb_x + self.patch_size[0]
                 ub_y = lb_y + self.patch_size[1]
                 ub_z = lb_z + self.patch_size[2]
