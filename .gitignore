@@ -133,7 +133,10 @@ oyvin_code/notebook.ipynp
 Cropped_Task3/*
 Task1/
 aske_learning/
-aske_code/Segmentations
+*/Segmentations*
 */Cropped_Task3/
 aske_code/WeightedTversky*
 aske_code/file_name_*
+*DS_store
+*__pycache__
+*/3D_Unet_Train_*
