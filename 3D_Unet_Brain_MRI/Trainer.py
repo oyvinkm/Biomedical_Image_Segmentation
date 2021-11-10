@@ -12,7 +12,7 @@ from preprocessing.DataLoader3D import DataLoader3D
 import os
 from torch.optim import Optimizer
 import numpy as np
-from Image_Functions import save_slice
+from Image_Functions import save_slice, show_slices
 from matplotlib import pyplot as plt
 from datetime import datetime
 
@@ -80,9 +80,9 @@ class NetworkTrainer():
 
     def save_slice_epoch(self,output, seg, epoch):
         save_slice(output[0][0].detach().cpu().numpy(), 
-                    os.path.join(self.output_folder, f'Slices/seg_{epoch+1}.png'))
+                    os.path.join(self.output_folder, f'Slices/{epoch+1}_SEG.png'))
         save_slice(seg[0][0].detach().cpu().numpy(), 
-                    os.path.join(self.output_folder, f'Slices/GT_{epoch+1}.png'))
+                    os.path.join(self.output_folder, f'Slices/{epoch+1}_GT.png'))
         plt.close()
 
     def create_loss_output(self):
@@ -106,7 +106,7 @@ class NetworkTrainer():
                     os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
-    def validate(self):
+    def validate(self, epoch):
         with torch.no_grad():
             val_loss = []
             for i, image_set in enumerate(self.val_loader):
@@ -116,6 +116,7 @@ class NetworkTrainer():
                 loss = self.loss_func(output, label)
                 val_loss.append(loss.item())
                 if i == self.val_loader.get_data_length() - 1:
+                    self.save_slice_epoch(output, label, epoch)
                     break
         self.val_loss.append(np.mean(val_loss))
 
@@ -142,8 +143,7 @@ class NetworkTrainer():
                 loss.backward()
                 self.optimizer.step()
                 if i == self.num_batches - 1:
-                    self.save_slice_epoch(outputs, labels, epoch)
                     break
-            self.validate()
+            self.validate(epoch)
             self.train_loss.append(np.mean(loss_here))
         self.create_loss_output()
