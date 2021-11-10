@@ -51,7 +51,6 @@ class DataLoader3D(DataLoaderBase):
 
     def get_keys(self):
         '''Don't use, it's super slow'''
-        print('getting keys')
         return {(self._data[i]['key']) : i for i in range(self.data_len)}
 
     def determine_shapes(self):
@@ -75,7 +74,6 @@ class DataLoader3D(DataLoaderBase):
         slicer = []
         for i in range(3):
             slicer.append(self.get_bbox_random(shape[i], new_center[i], i))
-            print(slicer[i])
         resizer_data = (slice(0,3), slicer[0], slicer[1], slicer[2])
         resizer_seg = (slice(0,1), slicer[0], slicer[1], slicer[2])
         return resizer_data, resizer_seg
@@ -98,6 +96,7 @@ class DataLoader3D(DataLoaderBase):
         return slice(lb, ub)
         
     def generate_train_batch(self):
+
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
         data = np.zeros(self.data_shape, dtype=np.float32)
@@ -127,14 +126,12 @@ class DataLoader3D(DataLoaderBase):
                     # If we need to choose on of two lacune regions
                     crop_choice = np.random.choice(['min', 'max'],1)
                     if crop_choice == 'min':
-                        print('min')
                         x = (min_x, min_x + np.random.randomint(5))
                         y = (min_y, min_y + np.random.randomint(5))
                         z = (min_z, min_z + np.random.randomint(5))
                         resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
 
                     elif crop_choice == 'max':
-                        print('max')
                         x = (max_x, max_x + np.random.randomint(5))
                         y = (max_y, max_y + np.random.randomint(5))
                         z = (max_z, max_z + np.random.randomint(5))
