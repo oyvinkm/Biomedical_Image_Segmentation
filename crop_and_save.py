@@ -53,13 +53,13 @@ class Crop_And_Save():
             for elm in data:
                 image = nib.load(os.path.join(path, elm))
                 img_data = image.get_fdata()
-                elm = elm.replace('.nii.gz', '.npz')
-                savez_compressed(os.path.join(new_path, elm), img_data)
+                elm = elm.replace('.nii.gz', '.npy')
+                save(os.path.join(new_path, elm), img_data)
             for elm in seg:
                 image = nib.load(os.path.join(path, elm))
                 img_data = image.get_fdata()
-                elm = elm.replace('.nii.gz', '.npz')
-                savez_compressed(os.path.join(new_path, elm), img_data)
+                elm = elm.replace('.nii.gz', '.npy')
+                save(os.path.join(new_path, elm), img_data)
 
     def undo(self):
         if os.path.exists(self.new_dir):
@@ -83,8 +83,6 @@ class Crop_And_Save():
 
 
 
-test = Crop_And_Save(dir_path, new_dir, sub_dir='sub-')
-test.crop_and_save()
 
 test = Crop_And_Save(seg_dir_path, seg_new_dir, sub_dir='sub-')
 test.crop_and_save()
