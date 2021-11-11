@@ -17,7 +17,7 @@ def slicing(img, x,y,z, cmap = 'gray'):
     plt.suptitle("Center slices for EPI image") 
     plt.show()
 
-def save_slice(fig, img, folder_name, size: tuple =(64,64,64), cmap='gray'):
+def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
     slice_0 = img[size[0], :, :]
     slice_1 = img[:, size[1], :]
     slice_2 = img[:, :, size[2]]

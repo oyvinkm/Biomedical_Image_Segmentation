@@ -16,14 +16,16 @@ loss_func = BinaryFocalLoss()
 optimizer = torch.optim.Adam
 batch_size = 2 
 num_batches_per_epoch = 10 #Number of batches before new epoch
-epochs = 100
+epochs = 500
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 16 #Number of base features in 3D
 learning_rate = 3e-4
 dialation_prob = 0.6
-dialation_epochs = 20
-dialation = True 
+dialation_epochs = 50
+dialation = True
+#data_folder = 'Cropped_Task3'
+data_folder = 'Numpy_Task3' 
 out_folder = '3D_Unet_Train'
 sub_dir = 'crop_sub-2'
 alternate_folder = 'Segmentations'
@@ -35,7 +37,7 @@ alternate_folder = 'Segmentations'
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dir_path = os.path.join(os.getcwd(), f"Cropped_Task3/{alternate_folder}")
+dir_path = os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_dir in folder])

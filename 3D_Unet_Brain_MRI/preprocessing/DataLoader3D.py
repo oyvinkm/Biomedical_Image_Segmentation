@@ -126,15 +126,15 @@ class DataLoader3D(DataLoaderBase):
                     # If we need to choose on of two lacune regions
                     crop_choice = np.random.choice(['min', 'max'],1)
                     if crop_choice == 'min':
-                        x = (min_x, min_x + np.random.randomint(5))
-                        y = (min_y, min_y + np.random.randomint(5))
-                        z = (min_z, min_z + np.random.randomint(5))
+                        x = (min_x, min_x + np.random.randint(5))
+                        y = (min_y, min_y + np.random.randint(5))
+                        z = (min_z, min_z + np.random.randint(5))
                         resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
 
                     elif crop_choice == 'max':
-                        x = (max_x, max_x + np.random.randomint(5))
-                        y = (max_y, max_y + np.random.randomint(5))
-                        z = (max_z, max_z + np.random.randomint(5))
+                        x = (max_x, max_x + np.random.randint(5))
+                        y = (max_y, max_y + np.random.randint(5))
+                        z = (max_z, max_z + np.random.randint(5))
                         resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
                 
                 else:
