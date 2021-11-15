@@ -1,4 +1,5 @@
 
+from typing import OrderedDict
 from torch import nn
 import torch
 from torch._C import device
@@ -18,10 +19,10 @@ from datetime import datetime
 
 
 class NetworkTrainer():
-    def __init__(self, device, network : nn.Module, epochs : int, 
-                loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int, in_channels : int,
-                base_features : int, lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
-                output_folder : str, dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True):
+    def __init__(self, device,  network : nn.Module, epochs : int, 
+                loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int,
+                lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
+                output_folder : str, model_kwargs : OrderedDict, dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True):
         self.dialate = dialate
         self.dialate_p = dialate_p
         self.dialate_epochs = dialate_epochs
@@ -31,8 +32,7 @@ class NetworkTrainer():
         self.train_set = train_set
         self.val_set = val_set
         self.lr = lr
-        self.base_features = base_features
-        self.in_channels = in_channels
+        self.model_kwargs = model_kwargs
         self.num_batches = num_batches
         self.patch_size = patch_size
         self.batch_size = batch_size
@@ -45,7 +45,7 @@ class NetworkTrainer():
     
 
     def initialize(self):
-        self.network = self.network(self.in_channels, base_features = self.base_features)
+        self.network = self.network(**self.model_kwargs)
         self.network.to(self.device)
         self.optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
         self.train_loader = DataLoader3D(self.train_set, self.patch_size, self.batch_size, dialate=self.dialate)
@@ -66,7 +66,7 @@ class NetworkTrainer():
         log = ( f"Test with the following parameters \nLoss funciton: {type(self.loss_func).__name__}\n"
                 f"Optimizer: {type(self.optimizer).__name__}\nEpochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
                 f"Number of batches per epoch: {self.num_batches}\n"
-                f"Base features: {self.base_features}\nDialation: {self.dialate}\n"
+                f"Model parameters: {self.model_kwargs}\nDialation: {self.dialate}\n"
                 f"      If true: on first {self.dialate_epochs} epochs"
                 f" with p = {self.dialate_p}")
         file = open(os.path.join(self.output_folder, 'log_file.txt'), 'w')
