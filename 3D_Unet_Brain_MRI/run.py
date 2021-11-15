@@ -27,7 +27,7 @@ dialation_prob = 0.6
 dialation_epochs = 50
 dialation = True
 #data_folder = 'Cropped_Task3'
-data_folder = 'Numpy_Task3' 
+data_folder = '3segmentations' 
 out_folder = '3D_Unet_Train'
 sub_dir = 'crop_sub-2'
 alternate_folder = 'Segmentations'
@@ -41,14 +41,13 @@ model_kwargs = {'base_features': base_features, 'in_channels': 3,
    ______________________________________________________________________________________________
 '''
 
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dir_path = os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
+dir_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_dir in folder])
 train, test = train_test_split(data_folders, test_size = 0.3)
-train, val = train_test_split(train, train_size=0.8)
+train, val = train_test_split(train, train_size=0.5)
 X_train = Set(dir_path, train)
 X_test = Set(dir_path, test)
 X_val = Set(dir_path, val)
@@ -61,3 +60,4 @@ net_trainer = NetworkTrainer(device = device, network=network, epochs = epochs, 
 
 net_trainer.initialize()    
 net_trainer.train()
+net_trainer.test()
