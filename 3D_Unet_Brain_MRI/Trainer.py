@@ -15,6 +15,7 @@ import numpy as np
 from Image_Functions import save_slice
 from matplotlib import pyplot as plt
 from datetime import datetime
+import torchio as tio
 
 
 class NetworkTrainer():
@@ -40,6 +41,7 @@ class NetworkTrainer():
         self.epochs = epochs
         self.train_loss = []
         self.val_loss = []
+        self.test_loss = []
         self.network= network
         self.device = device
     
@@ -48,9 +50,9 @@ class NetworkTrainer():
         self.network = self.network(self.in_channels, base_features = self.base_features)
         self.network.to(self.device)
         self.optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
-        self.train_loader = DataLoader3D(self.train_set, self.patch_size, self.batch_size, dialate=self.dialate)
-        self.test_loader = DataLoader(self.test_set, shuffle=True)
-        self.val_loader = DataLoader3D(self.test_set, self.patch_size, self.batch_size, dialate=False)
+        self.train_loader = DataLoader3D(self.train_set, self.batch_size, self.patch_size, dialate=self.dialate)
+        self.test_loader = DataLoader3D(self.test_set, self.batch_size, is_test=True)
+        self.val_loader = DataLoader3D(self.test_set, self.batch_size, self.patch_size, dialate=False)
         self.maybe_mkdir()
         self.create_log_file()
 
@@ -89,7 +91,9 @@ class NetworkTrainer():
         np.savetxt(os.path.join(self.output_folder, 'Loss/Train_Loss.csv'), self.train_loss, 
                             delimiter=",", fmt='%s')
         np.savetxt(os.path.join(self.output_folder, 'Loss/Validation_Loss.csv'), self.val_loss, 
-                            delimiter=",", fmt='%s')                 
+                            delimiter=",", fmt='%s')   
+        np.savetxt(os.path.join(self.output_folder, 'Loss/Test_Loss.csv'), self.test_loss, 
+                            delimiter=",", fmt='%s')              
         plt.plot(self.train_loss)
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
@@ -102,6 +106,14 @@ class NetworkTrainer():
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
         plt.suptitle(f'Validation loss per epoch 3DUnet with {type(self.loss_func).__name__}')
+        plt.savefig(os.path.join(self.output_folder, 
+                    os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+        plt.close()
+
+        plt.plot(self.test_loss)
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.suptitle(f'Test loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
                     os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
@@ -119,10 +131,11 @@ class NetworkTrainer():
                     break
         self.val_loss.append(np.mean(val_loss))
 
-    def get_test_loss(self):
+    def test(self):
         with torch.no_grad():
             test_loss = []
             for i, image_set in enumerate(self.test_loader):
+                
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
                 output = self.network(image)
@@ -130,8 +143,9 @@ class NetworkTrainer():
                 test_loss.append(loss.item())
                 if i == self.test_loader.get_data_length() - 1:
                     break
-        self.val_loss.append(np.mean(test_loss))
-        raise NotImplementedError
+        self.test_loss.append(np.mean(test_loss))
+        print(test_loss)
+        self.create_loss_output()
 
 
     def train(self):
@@ -156,4 +170,4 @@ class NetworkTrainer():
                     break
             self.validate()
             self.train_loss.append(np.mean(loss_here))
-        self.create_loss_output()
+        

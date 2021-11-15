@@ -164,7 +164,8 @@ class CNN(nn.Module):
             out = self.upconv1(out)
 
             #Decode Layer 1
-            out = torch.cat((skips.pop(), out), dim=1)
+            skip = skips.pop()
+            out = torch.cat((skip, out), dim=1)
             out = self.conv5_layer1(out)
             out = self.conv5_layer2(out)
             

@@ -140,3 +140,5 @@ aske_code/file_name_*
 *DS_store
 *__pycache__
 */3D_Unet_Train_*
+*/5segmentations/
+*/3segmentations/
