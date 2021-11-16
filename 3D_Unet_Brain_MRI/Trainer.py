@@ -12,7 +12,7 @@ from preprocessing.DataLoader3D import DataLoader3D
 import os
 from torch.optim import Optimizer
 import numpy as np
-from Image_Functions import save_slice, show_slices
+from Image_Functions import save_slice, show_slices, save_nii
 from matplotlib import pyplot as plt
 from datetime import datetime
 
@@ -77,11 +77,11 @@ class NetworkTrainer():
     def make_predictions(self):
         return 0
 
-    def save_test_slice(self, output, seg, num, seg_pos):
-        save_slice(output[0][0].detach().cpu().numpy(), 
-                    os.path.join(self.output_folder, f'Slices\Test\{num}_SEG.png'), size=seg_pos)
-        save_slice(seg[0][0].detach().cpu().numpy(), 
-                    os.path.join(self.output_folder, f'Slices\Test\{num}_GT.png'), size=seg_pos)
+    def save_test_nii(self, output, seg, num):
+        save_nii(output[0][0].detach().cpu().numpy(), 
+                    name=os.path.join(self.output_folder, f'Slices\Test\{num}_SEG.nii.gz'))
+        save_nii(seg[0][0].detach().cpu().numpy(), 
+                    name=os.path.join(self.output_folder, f'Slices\Test\{num}_GT.nii.gz'))
         plt.close()
 
     def save_slice_epoch(self,output, seg, epoch):
