@@ -21,12 +21,13 @@ class NetworkTrainer():
     def __init__(self, device,  network : nn.Module, epochs : int, 
                 loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int,
                 lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
-                output_folder : str, model_kwargs : OrderedDict, dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True):
+                output_folder : str, affine, model_kwargs : OrderedDict, dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True):
         self.dialate = dialate
         self.dialate_p = dialate_p
         self.dialate_epochs = dialate_epochs
         self.output_folder = f'{os.path.join(os.getcwd(), output_folder)}_{datetime.now().strftime("%d_%m_-%H.%M")}'
         self.optimizer = optimizer
+        self.test_img_affine = affine
         self.test_set = test_set
         self.train_set = train_set
         self.val_set = val_set
@@ -42,7 +43,6 @@ class NetworkTrainer():
         self.test_loss = []
         self.network= network
         self.device = device
-    
 
     def initialize(self):
         self.network = self.network(**self.model_kwargs)
@@ -78,10 +78,12 @@ class NetworkTrainer():
         return 0
 
     def save_test_nii(self, output, seg, num):
-        save_nii(output[0][0].detach().cpu().numpy(), 
-                    name=os.path.join(self.output_folder, f'Slices\Test\{num}_SEG.nii.gz'))
+        save_nii(output[0][0].detach().cpu().numpy(),
+                affine=self.test_img_affine,
+                name=os.path.join(self.output_folder, f'Slices\Test\{num}_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
-                    name=os.path.join(self.output_folder, f'Slices\Test\{num}_GT.nii.gz'))
+                affine=self.test_img_affine,
+                name=os.path.join(self.output_folder, f'Slices\Test\{num}_GT.nii.gz'))
         plt.close()
 
     def save_slice_epoch(self,output, seg, epoch):
@@ -145,8 +147,7 @@ class NetworkTrainer():
                 output = self.network(image)
                 loss = self.loss_func(output, label)
                 test_loss.append(loss.item())
-                """seg_pos = self.test_loader.get_seg_position(i)
-                self.save_test_slice(output, label, i, seg_pos)"""
+                self.save_test_nii(output, label, i)
                 if i == self.test_loader.get_data_length() - 1:
                     break
         self.test_loss.append(np.mean(test_loss))
