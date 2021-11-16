@@ -80,10 +80,10 @@ class NetworkTrainer():
     def save_test_nii(self, output, seg, num):
         save_nii(output[0][0].detach().cpu().numpy(),
                 affine=self.test_img_affine,
-                name=os.path.join(self.output_folder, f'Slices\Test\{num}_SEG.nii.gz'))
+                name=os.path.join(self.output_folder, f'Slices\Test\{num+1}_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
                 affine=self.test_img_affine,
-                name=os.path.join(self.output_folder, f'Slices\Test\{num}_GT.nii.gz'))
+                name=os.path.join(self.output_folder, f'Slices\Test\{num+1}_GT.nii.gz'))
         plt.close()
 
     def save_slice_epoch(self,output, seg, epoch):
