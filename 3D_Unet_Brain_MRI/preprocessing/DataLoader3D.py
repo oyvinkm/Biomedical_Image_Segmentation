@@ -148,10 +148,6 @@ class DataLoader3D(DataLoaderBase):
                     data[i] = cropped_data
                     cropped_seg = self._data[j]['seg'][resizer_seg]
                     seg[i] = cropped_seg
-                    if seg[i].sum() > 0:
-                        print('contains lacune')
-                    else:
-                        print('does not contain lacune, but should')
                     if self.dialate:
                             dialated = ndimage.binary_dilation(seg[i], self.dialeteshape, iterations=self.iterations)
                             seg[i] = dialated

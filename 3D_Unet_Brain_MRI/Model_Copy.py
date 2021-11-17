@@ -177,7 +177,6 @@ class Dynamic_3DUnet(nn.Module):
 
         for e in range(len(self.encode_path)):
             x = self.upconv[e](x)
-            print(x.shape)
             x = torch.cat((skips.pop(), x), dim=1)
             x = self.encode_path[e](x)
 
