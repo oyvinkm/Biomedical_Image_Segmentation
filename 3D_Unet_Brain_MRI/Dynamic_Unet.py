@@ -1,5 +1,6 @@
 import torch 
 from torch import nn
+from torch.nn.modules.activation import LeakyReLU
 
 
 class ConvDropoutNormNonlin(nn.Module):
@@ -15,7 +16,7 @@ class ConvDropoutNormNonlin(nn.Module):
             dropout_kwargs = {'p': 0.5, 'inplace': True}
         if norm_kwargs is None:
             norm_kwargs = {'eps': 1e-5, 'affine': True, 'momentum': 0.1}
-        if nonlin_kwargs is None:
+        if nonlin_kwargs is None and isinstance(nonlin, nn.LeakyReLU):
             nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
         self.conv_kwargs = conv_kwargs
         self.dropout_kwargs = dropout_kwargs
@@ -25,6 +26,7 @@ class ConvDropoutNormNonlin(nn.Module):
         self.norm_op = norm
         self.conv_op = conv
         self.nonlin_op = nonlin
+
         self.conv = self.conv_op(in_channels, out_channels, **self.conv_kwargs)
         if self.dropout_op is not None and self.dropout_kwargs['p'] is not None and self.dropout_kwargs[
             'p'] > 0:
@@ -33,12 +35,17 @@ class ConvDropoutNormNonlin(nn.Module):
             self.dropout = None
         
         self.instnorm = self.norm_op(out_channels,**self.norm_kwargs)
-        self.lrelu= self.nonlin_op(**self.nonlin_kwargs)
+        if self.nonlin_kwargs is not None:
+            self.nonlin= self.nonlin_op(**self.nonlin_kwargs)
+        else: 
+            self.nonlin = self.nonlin_op()
     def forward(self, x):
         x = self.conv(x)
         if self.dropout is not None:
             x = self.dropout(x)
-        return self.lrelu(self.instnorm(x))
+        if self.instnorm is not None:
+            x = self.instnorm
+        return self.nonlin(x)
 
 
 class ConvDropoutNonlinNorm(ConvDropoutNormNonlin):
@@ -46,7 +53,8 @@ class ConvDropoutNonlinNorm(ConvDropoutNormNonlin):
         x = self.conv(x)
         if self.dropout is not None:
             x = self.dropout(x)
-        return self.instnorm(self.lrelu(x))        
+        
+        return self.instnorm(self.nonlin(x))        
 
 class StackedLayers(nn.Module):
     def __init__(self, in_feat_channels, out_feat_channels, num_cons,
@@ -96,6 +104,8 @@ class Dynamic_3DUnet(nn.Module):
             maxpool_kwargs = (2,2,2)
 
         super(Dynamic_3DUnet, self).__init__()
+        if conv_kwargs is None:
+            conv_kwargs = {'kernel_size' : 3, 'stride' : 1, 'padding' : 1, 'bias' : True}
         self.conv_kwargs = conv_kwargs
         self.dropout_kwargs = dropout_kwargs
         self.norm_kwargs = norm_kwargs
@@ -120,46 +130,48 @@ class Dynamic_3DUnet(nn.Module):
         self.upconv = []
         self.maxpool_op = maxpool_op(self.maxpool_kwargs)
         self.upconv_op = upconv_op
-        """ self.decoder_block.append(StackedLayers(self.in_channels, self.base_features, 1, self.conv_op, 
-                                                    self.conv_kwargs, self.norm_op, self.norm_kwargs, 
-                                                    self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
-                                                    basic_block= basic_block)) """
         in_features = self.in_channels
         out_features = self.base_features
+        
         for d in range(self.depth):
             if d == 0:
                 self.num_conv_layer = 3
+
             else: 
                 self.num_conv_layer = 2
+
             self.decoder_block.append(StackedLayers(in_features, out_features, 2, self.conv_op, 
                                                     self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                     self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
                                                     basic_block= basic_block))
             if d != self.depth - 1:
                 self.num_maxpools += 1
+            in_features = self.decoder_block[d].out_channels
+            if d != self.depth - 2:
+                out_features = in_features * 2
+            else:
+                out_features = in_features * 4
 
-            in_features = out_features
-            out_features = self.base_features * (2 ** (d+3))
 
         for e in reversed(range(len(self.decoder_block) - 1)):
             if not isinstance(self.decoder_block[e], nn.MaxPool3d):
                 up_features = self.decoder_block[e + 1].out_channels
                 out_features = self.decoder_block[e].out_channels
+                in_channels = self.decoder_block[e].out_channels
                 skip_feat = out_features + up_features
                 self.upconv.append(self.upconv_op(up_features, up_features, (2,2,2), 2))
                 if e != 0:
-                    self.encoder_block.append(StackedLayers(skip_feat, out_features, 2, self.conv_op, 
+                    self.encoder_block.append(StackedLayers(skip_feat, in_channels, 2, self.conv_op, 
                                                         self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                         self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
                                                         basic_block= basic_block))
                 if e == 0:
-                    self.encoder_block.append(nn.Sequential(StackedLayers(skip_feat, out_features, 2, self.conv_op, 
+                    self.encoder_block.append(StackedLayers(skip_feat, out_features, 2, self.conv_op, 
                                                         self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                         self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
-                                                        basic_block= basic_block), StackedLayers(out_features, self.num_classes, 1, self.conv_op, 
-                                                        self.conv_kwargs, self.norm_op, self.norm_kwargs, 
-                                                        self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
-                                                        basic_block= basic_block)))
+                                                        basic_block= basic_block))
+                    self.conv = self.conv_op(out_features, 1, **self.conv_kwargs)
+                    self.encoder_block.append(nn.Sequential(self.conv, self.final_nonlin_op))
         self.decode_path = nn.ModuleList(self.decoder_block)
         self.encode_path = nn.ModuleList(self.encoder_block)
         self.upconv_path = nn.ModuleList(self.upconv)
@@ -179,8 +191,7 @@ class Dynamic_3DUnet(nn.Module):
             print(x.shape)
             x = torch.cat((skips.pop(), x), dim=1)
             x = self.encode_path[e](x)
-
-        return self.final_nonlin_op(x)
+        return x
 
         
 
