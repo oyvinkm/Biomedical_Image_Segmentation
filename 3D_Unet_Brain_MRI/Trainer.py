@@ -49,7 +49,7 @@ class NetworkTrainer():
         self.network.to(self.device)
         self.optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
         self.train_loader = DataLoader3D(self.train_set, self.batch_size, patch_size=self.patch_size, dialate=self.dialate)
-        self.test_loader = DataLoader3D(self.test_set, self.batch_size, is_test=True)
+        self.test_loader = DataLoader3D(self.test_set, 1, is_test=True)
         self.val_loader = DataLoader3D(self.test_set, self.batch_size, patch_size=self.patch_size, dialate=False)
         self.maybe_mkdir()
         self.create_log_file()
