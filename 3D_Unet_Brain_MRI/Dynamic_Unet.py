@@ -53,8 +53,10 @@ class ConvDropoutNonlinNorm(ConvDropoutNormNonlin):
         x = self.conv(x)
         if self.dropout is not None:
             x = self.dropout(x)
-        
-        return self.instnorm(self.nonlin(x))        
+        if self.instnorm is not None:
+            return self.instnorm(self.nonlin(x)) 
+        else:
+            return self.nonlin(x)
 
 class StackedLayers(nn.Module):
     def __init__(self, in_feat_channels, out_feat_channels, num_cons,
@@ -189,7 +191,6 @@ class Dynamic_3DUnet(nn.Module):
         for e in range(len(self.encode_path)):
             if e != len(self.encode_path) - 1:
                 x = self.upconv[e](x)
-                print(x.shape)
                 x = torch.cat((skips.pop(), x), dim=1)
             x = self.encode_path[e](x)
         return x
