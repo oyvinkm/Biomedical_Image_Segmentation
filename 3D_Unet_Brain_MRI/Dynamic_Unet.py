@@ -44,7 +44,7 @@ class ConvDropoutNormNonlin(nn.Module):
         if self.dropout is not None:
             x = self.dropout(x)
         if self.instnorm is not None:
-            x = self.instnorm
+            x = self.instnorm(x)
         return self.nonlin(x)
 
 
@@ -187,9 +187,10 @@ class Dynamic_3DUnet(nn.Module):
         x = self.decode_path[-1](x)
 
         for e in range(len(self.encode_path)):
-            x = self.upconv[e](x)
-            print(x.shape)
-            x = torch.cat((skips.pop(), x), dim=1)
+            if e != len(self.encode_path) - 1:
+                x = self.upconv[e](x)
+                print(x.shape)
+                x = torch.cat((skips.pop(), x), dim=1)
             x = self.encode_path[e](x)
         return x
 
