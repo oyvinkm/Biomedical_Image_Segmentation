@@ -15,7 +15,6 @@ class DiceLoss(_Loss):
         targets = targets.view(-1)
         intersection = (inputs*targets).sum()
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
-        print(dice)
         return 1 - dice
 
 class TverskyLoss(nn.Module):
@@ -56,7 +55,6 @@ class WeightedDiceLoss(_Loss):
         targets = targets.view(-1)
         intersection = (inputs*targets).sum()
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
-        print(dice)
         return 1 - dice
         
 class WeightedTverskyLoss(nn.Module):
@@ -194,26 +192,8 @@ class DiceFocalLoss(nn.Module):
 
         """
         super().__init__()
-        self.dice = DiceLoss(
-            include_background=include_background,
-            to_onehot_y=to_onehot_y,
-            sigmoid=sigmoid,
-            softmax=softmax,
-            other_act=other_act,
-            squared_pred=squared_pred,
-            jaccard=jaccard,
-            reduction=reduction,
-            smooth_nr=smooth_nr,
-            smooth_dr=smooth_dr,
-            batch=batch,
-        )
-        self.focal = BinaryFocalLoss(
-            include_background=include_background,
-            to_onehot_y=to_onehot_y,
-            gamma=gamma,
-            weight=focal_weight,
-            reduction=reduction,
-        )
+        self.dice = DiceLoss()
+        self.focal = BinaryFocalLoss()
         if lambda_dice < 0.0:
             raise ValueError("lambda_dice should be no less than 0.0.")
         if lambda_focal < 0.0:

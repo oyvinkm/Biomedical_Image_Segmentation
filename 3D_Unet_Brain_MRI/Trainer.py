@@ -110,7 +110,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Training loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Train_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Loss', f'Train_oss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
         plt.plot(self.val_loss)
@@ -118,7 +118,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Validation loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Val_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Loss', f'Val_Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
         plt.plot(self.test_loss)
@@ -126,7 +126,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Test loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Test_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Loss', f'Test_Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
     def validate(self, epoch):
