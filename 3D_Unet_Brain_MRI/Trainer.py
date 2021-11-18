@@ -12,6 +12,7 @@ from preprocessing.DataLoader3D import DataLoader3D
 import os
 from torch.optim import Optimizer
 import numpy as np
+import csv
 from Image_Functions import save_slice, show_slices, save_nii
 from matplotlib import pyplot as plt
 from datetime import datetime
@@ -53,6 +54,7 @@ class NetworkTrainer():
         self.val_loader = DataLoader3D(self.test_set, self.batch_size, patch_size=self.patch_size, dialate=False)
         self.maybe_mkdir()
         self.create_log_file()
+        self.write_tofile('Loss/Loss.csv', ('Train', 'Validation'))
 
 
     def maybe_mkdir(self):
@@ -93,19 +95,22 @@ class NetworkTrainer():
                     os.path.join(self.output_folder, f'Slices/{epoch+1}_GT.png'))
         plt.close()
 
+    def write_tofile(self, file, loss):
+        with open(os.path.join(self.output_folder, file), 'a') as f:
+            csv.register_dialect("custom", delimiter=",", skipinitialspace=True)
+            writer = csv.writer(f, dialect="custom")
+            writer.writerow(loss)
+            f.close()
+
     def create_loss_output(self):
-        np.savetxt(os.path.join(self.output_folder, 'Loss/Train_Loss.csv'), self.train_loss, 
-                            delimiter=",", fmt='%s')
-        np.savetxt(os.path.join(self.output_folder, 'Loss/Validation_Loss.csv'), self.val_loss, 
-                            delimiter=",", fmt='%s')
         np.savetxt(os.path.join(self.output_folder, 'Loss/Test_Loss.csv'), self.test_loss, 
-                            delimiter=",", fmt='%s')
+                          delimiter=",", fmt='%s')
         plt.plot(self.train_loss)
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
         plt.suptitle(f'Training loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Train_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
         plt.plot(self.val_loss)
@@ -113,7 +118,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Validation loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Val_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
         plt.plot(self.test_loss)
@@ -121,7 +126,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Test loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Test_Loss', f'Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
     def validate(self, epoch):
@@ -175,3 +180,4 @@ class NetworkTrainer():
                     break
             self.validate(epoch)
             self.train_loss.append(np.mean(loss_here))
+            self.write_tofile('Loss/Loss.csv', (self.train_loss[-1], self.val_loss[-1]))
