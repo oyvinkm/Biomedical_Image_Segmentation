@@ -9,7 +9,6 @@ class Set(Dataset):
         self.data_path = data_path
         self.npy = False
         if 'Numpy' in self.data_path:
-            print('numpy')
             self.npy = True
         self.folders = folders
         self.transform = transform 

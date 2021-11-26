@@ -20,11 +20,11 @@ loss_func = BinaryFocalLoss(gamma=3.5)
 optimizer = torch.optim.Adam
 '''When choosing learning rate scheduele, either choose: 
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
-scheduler = 'Exponential'
+scheduler = 'ReducePlateau'
 batch_size = 2
-num_batches_per_epoch = 1 #Number of batches before new epoch
-epochs = 1
-patch_size = (64, 64, 64)# Make sure that each value is divisible by 2**(num_pooling)
+num_batches_per_epoch = 40 #Number of batches before new epoch
+epochs = 100
+patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 4 #Number of base features in 3D
 learning_rate = 0.01

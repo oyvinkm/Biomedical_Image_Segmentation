@@ -85,7 +85,8 @@ class NetworkTrainer():
 
     def create_log_file(self):
         log = ( f"Test {self.start_string} with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
-                f"Optimizer: {type(self.optimizer).__name__}\nEpochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
+                f"Optimizer: {type(self.optimizer).__name__}\nLearning Rate Schedule: {self.lr_schedule}"
+                f"Epochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
                 f"Number of batches per epoch: {self.num_batches}\n"
                 f"Model parameters: {self.model_kwargs}\nDialation: {self.dialate}\n"
                 f"      If true: on first {self.dialate_epochs} epochs"
@@ -112,12 +113,10 @@ class NetworkTrainer():
         else: 
             affine = self.test_img_affine_sub2
         data = output[0][0].detach().cpu().numpy()
-        print(data.sum())
         save_nii(data,affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}uncertain_SEG.nii.gz'))
         data[data > 0.5] = 1
         data[data <= 0.5] = 0
-        print(data.sum())
         save_nii(data, affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}certain_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
@@ -140,6 +139,12 @@ class NetworkTrainer():
             f.close()
 
     def create_loss_output(self):
+        plt.plot(self.learning_rate)
+        plt.ylabel('Learning Rate')
+        plt.xlabel('Epochs')
+        plt.suptitle(f'Learning Rate 3DUnet with {self.lr_schedule}')
+        plt.savefig(os.path.join(self.output_folder, 'Learning_Rate'))
+        plt.close()
         np.savetxt(os.path.join(self.output_folder, 'Loss/Test_Loss.csv'), self.test_loss, 
                           delimiter=",", fmt='%s')
         plt.plot(self.train_loss)
@@ -220,9 +225,11 @@ class NetworkTrainer():
             self.train_loss.append(np.mean(loss_here))
             if isinstance(self.schduler, lr_s.ReduceLROnPlateau):
                 self.schduler.step(self.val_loss[-1])
+                self.learning_rate.append(self.optimizer.param_groups[0]['lr'])
             else:
                 self.schduler.step()
-            self.learning_rate.append(self.schduler.get_last_lr())
+                self.learning_rate.append(self.schduler.get_last_lr())
+                self.write_tofile('Learning_Rate.csv', self.learning_rate[-1])
             self.write_tofile('Loss/Loss.csv', (self.train_loss[-1], self.val_loss[-1]))
 
     def __call__(self):
