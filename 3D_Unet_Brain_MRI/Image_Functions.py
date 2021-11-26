@@ -62,5 +62,5 @@ def crop_to_size(set, size):
     return set
 
 def save_nii(data, affine, name="test.nii.gz"):
-    cropped_img = nib.Nifti1Image(data, affine)
-    nib.save(cropped_img, name)
+    img = nib.Nifti1Image(data, affine)
+    nib.save(img, name)

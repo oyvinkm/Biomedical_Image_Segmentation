@@ -11,6 +11,7 @@ from preprocessing.DataLoaderModule import DataLoaderBase as DL
 from preprocessing.DataLoader3D import DataLoader3D
 import os
 from torch.optim import Optimizer
+import torch.optim.lr_scheduler as lr_s
 import numpy as np
 import csv
 from Image_Functions import save_slice, show_slices, save_nii
@@ -22,13 +23,17 @@ class NetworkTrainer():
     def __init__(self, device,  network : nn.Module, epochs : int, 
                 loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int,
                 lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
-                output_folder : str, affine, model_kwargs : OrderedDict, dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True):
+                output_folder : str, affine_sub2, affine_sub1, model_kwargs : OrderedDict, 
+                dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True,
+                lr_schedule : str = None):
+        self.lr_schedule = lr_schedule
         self.dialate = dialate
         self.dialate_p = dialate_p
         self.dialate_epochs = dialate_epochs
         self.output_folder = f'{os.path.join(os.getcwd(), output_folder)}_{datetime.now().strftime("%d_%m_-%H.%M")}'
         self.optimizer = optimizer
-        self.test_img_affine = affine
+        self.test_img_affine_sub2 = affine_sub2
+        self.test_img_affine_sub1 = affine_sub1
         self.test_set = test_set
         self.train_set = train_set
         self.val_set = val_set
@@ -42,6 +47,7 @@ class NetworkTrainer():
         self.train_loss = []
         self.val_loss = []
         self.test_loss = []
+        self.learning_rate = []
         self.network= network
         self.device = device
 
@@ -49,6 +55,7 @@ class NetworkTrainer():
         self.network = self.network(**self.model_kwargs)
         self.network.to(self.device)
         self.optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
+        self.schduler = self.interchangable_lr(self.optimizer)
         self.train_loader = DataLoader3D(self.train_set, self.batch_size, patch_size=self.patch_size, dialate=self.dialate)
         self.test_loader = DataLoader3D(self.test_set, 1, is_test=True)
         self.val_loader = DataLoader3D(self.test_set, self.batch_size, patch_size=self.patch_size, dialate=False)
@@ -56,16 +63,26 @@ class NetworkTrainer():
         self.create_log_file()
         self.write_tofile('Loss/Loss.csv', ('Train', 'Validation'))
 
+    def interchangable_lr(self, verb=False, gamma=0.9):
+        if self.lr_schedule == 'Exponential':
+            return (lr_s.ExponentialLR(optimizer=self.optimizer, gamma=gamma, verbose=verb))
+        elif self.lr_schedule == 'Lambda': 
+            lambda_1 = lambda epoch: (1-(epoch/self.epochs))**gamma
+            return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=verb)
+        elif self.lr_schedule == 'ReducePlateau': 
+            return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=verb)
+        elif self.lr_schedule is None:
+            return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=verb)
 
     def maybe_mkdir(self):
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
             os.mkdir(os.path.join(self.output_folder, 'Slices'))
-            os.mkdir(os.path.join(self.output_folder, 'Slices/Test'))
+            os.mkdir(os.path.join(self.output_folder, 'Test'))
             os.mkdir(os.path.join(self.output_folder, 'Loss'))
 
     def create_log_file(self):
-        log = ( f"Test with the following parameters \nLoss funciton: {type(self.loss_func).__name__}\n"
+        log = ( f"Test with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
                 f"Optimizer: {type(self.optimizer).__name__}\nEpochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
                 f"Number of batches per epoch: {self.num_batches}\n"
                 f"Model parameters: {self.model_kwargs}\nDialation: {self.dialate}\n"
@@ -79,13 +96,22 @@ class NetworkTrainer():
     def make_predictions(self):
         return 0
 
-    def save_test_nii(self, output, seg, num):
-        save_nii(output[0][0].detach().cpu().numpy(),
-                affine=self.test_img_affine,
-                name=os.path.join(self.output_folder, f'Slices/Test/{num+1}_SEG.nii.gz'))
+    def save_test_nii(self, output, seg, num, key):
+        if 'sub-1' in key:
+            affine = self.test_img_affine_sub1
+        else: 
+            affine = self.test_img_affine_sub2
+        data = output[0][0].detach().cpu().numpy()
+        print(data.sum())
+        save_nii(data,affine=affine, name=os.path.join(self.output_folder, 
+                f'Test/{num+1}uncertain_SEG.nii.gz'))
+        data[data > 0.5] = 1
+        print(data.sum())
+        save_nii(data, affine=affine, name=os.path.join(self.output_folder, 
+                f'Test/{num+1}certain_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
-                affine=self.test_img_affine,
-                name=os.path.join(self.output_folder, f'Slices/Test/{num+1}_GT.nii.gz'))
+                affine=affine,
+                name=os.path.join(self.output_folder, f'Test/{num+1}_GT.nii.gz'))
         plt.close()
 
     def save_slice_epoch(self,output, seg, epoch):
@@ -149,10 +175,11 @@ class NetworkTrainer():
             for i, image_set in enumerate(self.test_loader):
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
+                key = image_set['keys']
                 output = self.network(image)
                 loss = self.loss_func(output, label)
                 test_loss.append(loss.item())
-                self.save_test_nii(output, label, i)
+                self.save_test_nii(output, label, i, key)
                 if i == self.test_loader.get_data_length() - 1:
                     break
         self.test_loss.append(np.mean(test_loss))
@@ -180,4 +207,9 @@ class NetworkTrainer():
                     break
             self.validate(epoch)
             self.train_loss.append(np.mean(loss_here))
+            if isinstance(self.schduler, lr_s.ReduceLROnPlateau):
+                self.schduler.step(self.val_loss[-1])
+            else:
+                self.schduler.step()
+            self.learning_rate.append(self.schduler.get_last_lr())
             self.write_tofile('Loss/Loss.csv', (self.train_loss[-1], self.val_loss[-1]))

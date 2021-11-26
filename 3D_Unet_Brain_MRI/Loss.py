@@ -27,6 +27,10 @@ class TverskyLoss(nn.Module):
     def get_name(self):
         return "TverskyLoss"
 
+    def get_fields(self):
+        return {'alpha': self.alpha,
+                'beta': self.beta}
+
     def forward(self, inputs, targets, smooth=0):
         
         #comment out if your model contains a sigmoid or equivalent activation layer
@@ -102,7 +106,9 @@ class BinaryFocalLoss(_Loss):
         self.reduction = reduction
 
         assert self.reduction in ['none', 'mean', 'sum']
-
+    def get_fields(self):
+        return {'alpha': self.alpha, 
+                'gamma': self.gamma}
     def forward(self, output, target):
         #prob = torch.sigmoid(output)
         prob = torch.clamp(output, self.smooth, 1.0 - self.smooth)
@@ -200,7 +206,8 @@ class DiceFocalLoss(nn.Module):
             raise ValueError("lambda_focal should be no less than 0.0.")
         self.lambda_dice = lambda_dice
         self.lambda_focal = lambda_focal
-
+    def get_fields(self):
+        return {'dunno': 0}
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Args:
