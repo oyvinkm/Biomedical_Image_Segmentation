@@ -79,6 +79,4 @@ net_trainer = NetworkTrainer(device = device, network=network, epochs = epochs, 
                             model_kwargs=model_kwargs, dialate_p=dialation_prob, dialate_epochs=dialation_epochs, 
                             dialate=dialation, lr_schedule=scheduler)
 
-net_trainer.initialize()    
-net_trainer.train()
-net_trainer.test()
+net_trainer()

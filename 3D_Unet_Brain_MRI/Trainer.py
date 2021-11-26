@@ -26,6 +26,8 @@ class NetworkTrainer():
                 output_folder : str, affine_sub2, affine_sub1, model_kwargs : OrderedDict, 
                 dialate_p : float = 0.6, dialate_epochs : int = 20, dialate : bool = True,
                 lr_schedule : str = None):
+        self.start = datetime.now()
+        self.start_string = self.start.strftime("%d/%m/%Y %H:%M:%S")
         self.lr_schedule = lr_schedule
         self.dialate = dialate
         self.dialate_p = dialate_p
@@ -82,7 +84,7 @@ class NetworkTrainer():
             os.mkdir(os.path.join(self.output_folder, 'Loss'))
 
     def create_log_file(self):
-        log = ( f"Test with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
+        log = ( f"Test {self.start_string} with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
                 f"Optimizer: {type(self.optimizer).__name__}\nEpochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
                 f"Number of batches per epoch: {self.num_batches}\n"
                 f"Model parameters: {self.model_kwargs}\nDialation: {self.dialate}\n"
@@ -91,6 +93,14 @@ class NetworkTrainer():
         file = open(os.path.join(self.output_folder, 'log_file.txt'), 'w')
         file.write(log)
         file.close()
+
+    def finish(self):
+        with open(os.path.join(self.output_folder, 'log_file.txt'), 'a') as f:
+            now = datetime.now()
+            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+            f.write(f'\nFinished at {dt_string}, time elapsed: {now - self.start}')
+            f.close()
+
 
 
     def make_predictions(self):
@@ -106,6 +116,7 @@ class NetworkTrainer():
         save_nii(data,affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}uncertain_SEG.nii.gz'))
         data[data > 0.5] = 1
+        data[data <= 0.5] = 0
         print(data.sum())
         save_nii(data, affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}certain_SEG.nii.gz'))
@@ -213,3 +224,9 @@ class NetworkTrainer():
                 self.schduler.step()
             self.learning_rate.append(self.schduler.get_last_lr())
             self.write_tofile('Loss/Loss.csv', (self.train_loss[-1], self.val_loss[-1]))
+
+    def __call__(self):
+        self.initialize()    
+        self.train()
+        self.test()
+        self.finish()
