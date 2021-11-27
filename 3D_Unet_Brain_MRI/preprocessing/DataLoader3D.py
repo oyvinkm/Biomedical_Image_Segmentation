@@ -14,12 +14,15 @@ import torchio as tio
 
 class DataLoader3D(DataLoaderBase):
 
-    def __init__(self, data, BATCH_SIZE, patch_size = None, is_test = False, pad_mode = 'edge',  
-                    pad_kwargs_data = None, to_tensor = True, dialate : bool = False, iterations = 1, alpha : float = 0.6):
+    def __init__(self, data, BATCH_SIZE,  patch_size = None, is_test = False, pad_mode = 'edge',  
+                    pad_kwargs_data = None, to_tensor = True, dialate : bool = False, iterations = 1, alpha : float = 0.6
+                    ):
         
         super(DataLoader3D, self).__init__(data, BATCH_SIZE, None)
         if pad_kwargs_data is None:
             pad_kwargs_data = OrderedDict
+        if is_test:
+            self.test_index = [i for i in range(BATCH_SIZE)]
         self.pad_kwargs_data = pad_kwargs_data
         self.pad_mode = pad_mode
         self.is_test = is_test
@@ -170,7 +173,7 @@ class DataLoader3D(DataLoaderBase):
             "In case it's the testing set, don't create patches"
             max_x, max_y, max_z = 0, 0, 0
             data_list = []
-            for i, j in enumerate(selected_index):
+            for i, j in enumerate(self.test_index):
                 "iterating through the batch to get the max x, y and z position"
                 data = self._data[j]
                 data_shape = data['data'][0].shape
@@ -191,6 +194,7 @@ class DataLoader3D(DataLoaderBase):
             for i in range(len(data_list)):
                 data[i] = transform(data_list[i]['data'])
                 seg[i] = transform(data_list[i]['seg'])
+            self.test_index = [i + self.BATCH_SIZE for i in self.test_index]
         if self.to_tensor:
             data = torch.from_numpy(data)
             seg = torch.from_numpy(seg)

@@ -112,12 +112,12 @@ class NetworkTrainer():
             affine = self.test_img_affine_sub1
         else: 
             affine = self.test_img_affine_sub2
-        data = output[0][0].detach().cpu().numpy()
-        save_nii(data,affine=affine, name=os.path.join(self.output_folder, 
+        
+        save_nii(output[0][0].detach().cpu().numpy(),affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}uncertain_SEG.nii.gz'))
-        data[data > 0.5] = 1
-        data[data <= 0.5] = 0
-        save_nii(data, affine=affine, name=os.path.join(self.output_folder, 
+        threshold = torch.tensor([0.5])
+        result = (output[0][0]>threshold).float()
+        save_nii(result.detach().cpu().numpy(), affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}certain_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
                 affine=affine,
