@@ -85,6 +85,8 @@ class NetworkTrainer():
             os.mkdir(os.path.join(self.output_folder, 'Slices'))
             os.mkdir(os.path.join(self.output_folder, 'Test'))
             os.mkdir(os.path.join(self.output_folder, 'Loss'))
+            os.mkdir(os.path.join(self.output_folder, 'Accuracy'))
+
 
     def create_log_file(self):
         log = ( f"Test {self.start_string} with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
@@ -173,6 +175,26 @@ class NetworkTrainer():
                     os.path.join('Loss', f'Test_Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
+    def create_accuracy_output(self):
+        plt.plot(self.accuracy)
+        plt.ylabel('Accuracy')
+        plt.xlabel('pic number')
+        plt.suptitle(f'Accuracy for each picture during testing')
+        plt.savefig(os.path.join(self.output_folder,
+                    os.path.join('Accuracy', f'Accuracy_{self.epochs}_{type(self.loss_func).__name__}')))
+        np.savetxt(os.path.join(self.output_folder, 'Accuracy/Average_accuracy.csv'), [np.mean(self.accuracy)], 
+                          delimiter=",", fmt='%s')
+
+    def get_accuracy_by_dice(self, output, target):
+        smooth = 1e-5
+        threshold = torch.tensor([0.5])
+        inputs = (output[0][0]>threshold).float()
+        inputs = inputs.view(-1)
+        target = target.view(-1)
+        intersection = (inputs*target).sum()
+        dice = (2.*intersection + smooth)/(inputs.sum() + target.sum() + smooth)
+        return dice.item()
+
     def validate(self, epoch):
         with torch.no_grad():
             val_loss = []
@@ -198,8 +220,11 @@ class NetworkTrainer():
                 loss = self.loss_func(output, label)
                 test_loss.append(loss.item())
                 self.save_test_nii(output, label, i, key)
+                accuracy_item = self.get_accuracy_by_dice(output, label)
+                self.accuracy.append(accuracy_item)
                 if i == self.test_loader.get_data_length() - 1:
                     break
+        self.create_accuracy_output()
         self.test_loss.append(np.mean(test_loss))
         self.create_loss_output()
 
