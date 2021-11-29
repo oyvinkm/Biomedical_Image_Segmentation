@@ -50,6 +50,7 @@ class NetworkTrainer():
         self.val_loss = []
         self.test_loss = []
         self.learning_rate = []
+        self.accuracy = []
         self.network= network
         self.device = device
 

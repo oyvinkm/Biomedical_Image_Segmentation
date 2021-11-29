@@ -15,6 +15,16 @@ from Model import CNN
 from Dynamic_Unet import Dynamic_3DUnet, ConvDropoutNonlinNorm, ConvDropoutNormNonlin
 import nibabel as nib
 
+data_folder = 'Numpy_Task3' 
+out_folder = '3D_Unet_Train'
+sub_dir = 'crop_sub'
+alternate_folder = 'Segmentations'
+dir_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
+data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
+                        os.path.isdir(os.path.join(dir_path, folder)) 
+                        and sub_dir in folder])
+train, test = train_test_split(data_folders, test_size = 0.15)
+train, val = train_test_split(train, train_size=0.8)
 '''______________________________________________________________________________________________
                                             CHANGE VARIABLES HERE
    ______________________________________________________________________________________________
@@ -27,13 +37,13 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = None
 batch_size = 2
-num_batches_per_epoch = 1 #Number of batches before new epoch
-epochs = 3
+num_batches_per_epoch = len(train) #Number of batches before new epoch
+epochs = 2000
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
-base_features = 4 #Number of base features in 3D
-transform = transforms.Compose([AddGaussianNoise(p_per_sample = 0.5, p_per_channel = 0.5), 
-                                 FlipTransform(prob = 0.4)])
+base_features = 8 #Number of base features in 3D
+#transform = transforms.Compose([AddGaussianNoise(p_per_sample = 0.5, p_per_channel = 0.5), 
+                                 #FlipTransform(prob = 0.4)])
 learning_rate = 0.01
 dialation_prob = 0.6
 dialation_epochs = 50
@@ -73,7 +83,7 @@ data_folders = sorted([folder for folder  in os.listdir(dir_path) if
                         and sub_dir in folder])
 train, test = train_test_split(data_folders, test_size = 0.15)
 train, val = train_test_split(train, train_size=0.8)
-X_train = Set(dir_path, train, transform=transform)
+X_train = Set(dir_path, train, transform=None)
 X_test = Set(dir_path, test)
 X_val = Set(dir_path, val)
 
