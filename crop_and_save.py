@@ -13,7 +13,7 @@ new_dir = 'Cropped_Task3/'
 
 class Crop_And_Save():
     def __init__(self, data_path, new_dir, sub_dir = 'sub-', parent_dir = ''):
-        self.data_path = data_path
+        self.data_path = os.path.join(os.path.dirname(__file__), data_path)
         self.parent_dir = parent_dir
         self.sub_dir = sub_dir
         self.new_dir = os.path.join(self.parent_dir, new_dir)
@@ -104,7 +104,7 @@ class Crop_And_Save():
 
 
 
-test = Crop_And_Save(dir_path, new_dir, sub_dir='sub-2')
+test = Crop_And_Save(dir_path, new_dir, sub_dir='sub-')
 test.crop_and_save()
 
 

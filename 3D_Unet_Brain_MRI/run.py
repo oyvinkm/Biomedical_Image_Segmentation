@@ -42,7 +42,7 @@ dialation = True
 data_folder = 'Numpy_Task3' 
 out_folder = '3D_Unet_Train'
 sub_dir = 'crop_sub'
-alternate_folder = 'Segmentations'
+alternate_folder = '5segmentations'
 
 '''______________________________________________________________________________________________
                                             DON'T CHANGE UNDERLYING CODE
@@ -55,11 +55,11 @@ pc_path_sub2 = os.path.join(os.getcwd(), 'Cropped_Task3/crop_sub-233/crop_sub-23
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 test_path_sub2 = cluster_path_sub2 if torch.cuda.is_available() else pc_path_sub2
 test_imgur_affine_sub2 = nib.load(test_path_sub2).affine
-cluster_path_sub1 = os.path.join(os.getcwd(), 'Cropped_Task3/crop_sub-102/crop_sub-102_space-T1_desc-masked_T1.nii.gz')
+"""cluster_path_sub1 = os.path.join(os.getcwd(), 'Cropped_Task3/crop_sub-102/crop_sub-102_space-T1_desc-masked_T1.nii.gz')
 pc_path_sub1 = os.path.join(os.getcwd(), 'Cropped_Task3/crop_sub-102/crop_sub-102_space-T1_desc-masked_T1.nii.gz')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 test_path_sub1 = cluster_path_sub1 if torch.cuda.is_available() else pc_path_sub1
-test_imgur_affine_sub1 = nib.load(test_path_sub1).affine
+test_imgur_affine_sub1 = nib.load(test_path_sub1).affine"""
 model_kwargs = {'base_features': base_features, 'in_channels': 3,
                'num_classes':1 , 'depth': 4, 'conv_kwargs': None, 'dropout_op': None,
                'dropout_kwargs': None, 'nonlin_kwargs': None, 'maxpool_kwargs': None, 

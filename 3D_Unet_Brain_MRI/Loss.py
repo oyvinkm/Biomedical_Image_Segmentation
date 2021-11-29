@@ -23,9 +23,6 @@ class TverskyLoss(nn.Module):
         super(TverskyLoss, self).__init__()
         self.alpha = weight[0]
         self.beta = weight[1]
-    
-    def get_name(self):
-        return "TverskyLoss"
 
     def get_fields(self):
         return {'alpha': self.alpha,

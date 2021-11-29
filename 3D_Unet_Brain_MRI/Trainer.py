@@ -49,6 +49,7 @@ class NetworkTrainer():
         self.train_loss = []
         self.val_loss = []
         self.test_loss = []
+        self.accuracy = []
         self.learning_rate = []
         self.network= network
         self.device = device
@@ -154,7 +155,7 @@ class NetworkTrainer():
         plt.xlabel('Epochs')
         plt.suptitle(f'Training loss per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Loss', f'Train_oss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Loss', f'Train_Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
 
         plt.plot(self.val_loss)
@@ -172,6 +173,26 @@ class NetworkTrainer():
         plt.savefig(os.path.join(self.output_folder, 
                     os.path.join('Loss', f'Test_Loss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
+
+    def create_accuracy_output(self):
+        plt.plot(self.accuracy)
+        plt.ylabel('Accuracy')
+        plt.xlabel('pic number')
+        plt.suptitle(f'Accuracy for each picture during testing')
+        plt.savefig(os.path.join(self.output_folder,
+                    os.path.join('Accuracy', f'Accuracy_{self.epochs}_{type(self.loss_func).__name__}')))
+        np.savetxt(os.path.join(self.output_folder, 'Accuracy/Average accuracy.csv'), self.test_loss, 
+                          delimiter=",", fmt='%s')
+
+    def get_accuracy_by_dice(self, output, target):
+        smooth = 1e-5
+        threshold = torch.tensor([0.5])
+        inputs = (output[0][0]>threshold).float()
+        inputs = inputs.view(-1)
+        target = target.view(-1)
+        intersection = (inputs*target).sum()
+        dice = (2.*intersection + smooth)/(inputs.sum() + target.sum() + smooth)
+        return dice
 
     def validate(self, epoch):
         with torch.no_grad():
@@ -200,6 +221,9 @@ class NetworkTrainer():
                 self.save_test_nii(output, label, i, key)
                 if i == self.test_loader.get_data_length() - 1:
                     break
+                accuracy_item = self.get_accuracy_by_dice(output, label)
+                self.accuracy.append(accuracy_item)
+
         self.test_loss.append(np.mean(test_loss))
         self.create_loss_output()
 
