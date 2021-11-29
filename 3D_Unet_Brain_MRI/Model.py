@@ -34,19 +34,19 @@ class CNN(nn.Module):
         self.upconv1 = self.upconv(self.base_features*16, self.base_features*16, (2,2,2), 2)
 
         #Decode Layer 1
-        self.conv5_layer1 = self._conv_layer_set((self.base_features*8 + self.base_features*16), self.base_features*4)
-        self.conv5_layer2 = self._conv_layer_set(self.base_features*4, self.base_features*4)
+        self.conv5_layer1 = self._conv_layer_set((self.base_features*8 + self.base_features*16), self.base_features*8)
+        self.conv5_layer2 = self._conv_layer_set(self.base_features*8, self.base_features*8)
         self.supervised_layer5 = nn.Sequential(nn.Conv3d(self.base_features*8, 1, kernel_size=3, stride=1, padding=1), nn.Softmax(dim=0))
-        self.upconv2 = self.upconv(self.base_features*4, self.base_features*4, (2,2,2), 2)
+        self.upconv2 = self.upconv(self.base_features*8, self.base_features*8, (2,2,2), 2)
 
         #Decode Layer 2
-        self.conv6_layer1 = self._conv_layer_set((self.base_features*4 + self.base_features*4), self.base_features*2)
-        self.conv6_layer2 = self._conv_layer_set(self.base_features*2, self.base_features*2)
+        self.conv6_layer1 = self._conv_layer_set((self.base_features*4 + self.base_features*8), self.base_features*4)
+        self.conv6_layer2 = self._conv_layer_set(self.base_features*4, self.base_features*4)
         self.supervised_layer6 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3, stride=1, padding=1), nn.Softmax(dim=0))
-        self.upconv3 = self.upconv(self.base_features*2, self.base_features*2, (2,2,2), 2)
+        self.upconv3 = self.upconv(self.base_features*4, self.base_features*4, (2,2,2), 2)
         
         #Decode Layer 3
-        self.conv7_layer1 = self._conv_layer_set((self.base_features + self.base_features*2), self.base_features)
+        self.conv7_layer1 = self._conv_layer_set((self.base_features + self.base_features*4), self.base_features)
         self.conv7_layer2 = self._conv_layer_set(self.base_features, self.base_features)
         #self.supervised_layer7 = nn.Sequential(nn.Conv3d(self.base_features*4, 1, kernel_size=3), nn.Softmax())
         #Output
@@ -164,8 +164,7 @@ class CNN(nn.Module):
             out = self.upconv1(out)
 
             #Decode Layer 1
-            skip = skips.pop()
-            out = torch.cat((skip, out), dim=1)
+            out = torch.cat((skips.pop(), out), dim=1)
             out = self.conv5_layer1(out)
             out = self.conv5_layer2(out)
             

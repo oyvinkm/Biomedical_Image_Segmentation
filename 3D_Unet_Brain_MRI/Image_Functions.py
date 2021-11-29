@@ -2,13 +2,14 @@ from matplotlib import pyplot as plt
 import numpy as np
 import torchio as tio
 import os
+import nibabel as nib
 
 def show_slices(slices, color = 'gray'):
-   """ Function to display row of image slices """
-   fig, axes = plt.subplots(1, len(slices))
-   for i, slice in enumerate(slices):
-       axes[i].imshow(slice.T, cmap=color, origin="lower")
-
+    """ Function to display row of image slices """
+    fig, axes = plt.subplots(1, len(slices))
+    for i, slice in enumerate(slices):
+        axes[i].imshow(slice.T, cmap=color, origin="lower")
+    return axes
 def slicing(img, x,y,z, cmap = 'gray'):
     slice_0 = img[x, :, :]
     slice_1 = img[:, y, :]
@@ -17,7 +18,7 @@ def slicing(img, x,y,z, cmap = 'gray'):
     plt.suptitle("Center slices for EPI image") 
     plt.show()
 
-def save_slice(img, folder_name, size: tuple =(64,64,64), cmap='gray'):
+def save_slice(img, folder_name, size: tuple=(64,64,64), cmap='gray'):
     slice_0 = img[size[0], :, :]
     slice_1 = img[:, size[1], :]
     slice_2 = img[:, :, size[2]]
@@ -59,3 +60,7 @@ def crop_to_size(set, size):
         transform = tio.CropOrPad((size))
         set[i]['data'], set[i]['seg'] = transform(set[i]['data']), transform(set[i]['seg'])
     return set
+
+def save_nii(data, affine, name="test.nii.gz"):
+    img = nib.Nifti1Image(data, affine)
+    nib.save(img, name)

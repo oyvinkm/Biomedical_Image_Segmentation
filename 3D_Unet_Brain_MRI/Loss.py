@@ -15,7 +15,6 @@ class DiceLoss(_Loss):
         targets = targets.view(-1)
         intersection = (inputs*targets).sum()
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
-        print(dice)
         return 1 - dice
 
 class TverskyLoss(nn.Module):
@@ -28,10 +27,14 @@ class TverskyLoss(nn.Module):
     def get_name(self):
         return "TverskyLoss"
 
+    def get_fields(self):
+        return {'alpha': self.alpha,
+                'beta': self.beta}
+
     def forward(self, inputs, targets, smooth=0):
         
         #comment out if your model contains a sigmoid or equivalent activation layer
-        inputs = torch.sigmoid(inputs)       
+        #inputs = torch.sigmoid(inputs)       
         
         #flatten label and prediction tensors
         inputs = inputs.view(-1)
@@ -56,7 +59,6 @@ class WeightedDiceLoss(_Loss):
         targets = targets.view(-1)
         intersection = (inputs*targets).sum()
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
-        print(dice)
         return 1 - dice
         
 class WeightedTverskyLoss(nn.Module):
@@ -104,7 +106,9 @@ class BinaryFocalLoss(_Loss):
         self.reduction = reduction
 
         assert self.reduction in ['none', 'mean', 'sum']
-
+    def get_fields(self):
+        return {'alpha': self.alpha, 
+                'gamma': self.gamma}
     def forward(self, output, target):
         #prob = torch.sigmoid(output)
         prob = torch.clamp(output, self.smooth, 1.0 - self.smooth)
@@ -194,33 +198,16 @@ class DiceFocalLoss(nn.Module):
 
         """
         super().__init__()
-        self.dice = DiceLoss(
-            include_background=include_background,
-            to_onehot_y=to_onehot_y,
-            sigmoid=sigmoid,
-            softmax=softmax,
-            other_act=other_act,
-            squared_pred=squared_pred,
-            jaccard=jaccard,
-            reduction=reduction,
-            smooth_nr=smooth_nr,
-            smooth_dr=smooth_dr,
-            batch=batch,
-        )
-        self.focal = BinaryFocalLoss(
-            include_background=include_background,
-            to_onehot_y=to_onehot_y,
-            gamma=gamma,
-            weight=focal_weight,
-            reduction=reduction,
-        )
+        self.dice = DiceLoss()
+        self.focal = BinaryFocalLoss()
         if lambda_dice < 0.0:
             raise ValueError("lambda_dice should be no less than 0.0.")
         if lambda_focal < 0.0:
             raise ValueError("lambda_focal should be no less than 0.0.")
         self.lambda_dice = lambda_dice
         self.lambda_focal = lambda_focal
-
+    def get_fields(self):
+        return {'dunno': 0}
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -241,3 +228,30 @@ class DiceFocalLoss(nn.Module):
         total_loss: torch.Tensor = self.lambda_dice * dice_loss + self.lambda_focal * focal_loss
 
         return total_loss
+
+class FocalTversky(nn.Module):
+    def __init__(self, weight : tuple=(0.5, 0.5), 
+                gamma : float = 3, alpha : float = 3, 
+                reduction = 'mean', 
+                lamda_focal : float = 1., lambda_tversky : float = 1.):
+        super(FocalTversky, self).__init__()
+        self.reduction = reduction
+        self.lambda_focal = lamda_focal
+        self.lambda_tversky = lambda_tversky
+        self.focal = BinaryFocalLoss(alpha = alpha, gamma = gamma)
+        self.tversky = TverskyLoss(weight = weight)
+    def get_fields(self):
+        return {'dunno': 0}
+    def forward(self, output, target):
+        focal_loss = self.focal(output, target)
+        print(focal_loss.item())
+        tversky_loss = self.tversky(output, target)
+        print(tversky_loss.item())
+        total_loss = torch.Tensor([self.lambda_focal * focal_loss, self.lambda_tversky * tversky_loss])
+        if self.reduction == 'mean':
+            total_loss = torch.mean(total_loss)
+        elif self.reduction == 'sum':
+            total_loss = torch.sum(total_loss)
+        total_loss.requires_grad = True
+        return total_loss
+
