@@ -57,7 +57,10 @@ class NetworkTrainer():
         self.network = self.network(**self.model_kwargs)
         self.network.to(self.device)
         self.optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
-        self.schduler = self.interchangable_lr(self.optimizer)
+        if self.lr_schedule is not None:
+            self.schduler = self.interchangable_lr(self.optimizer)
+        else: 
+            self.schduler = None
         self.train_loader = DataLoader3D(self.train_set, self.batch_size, patch_size=self.patch_size, dialate=self.dialate)
         self.test_loader = DataLoader3D(self.test_set, 1, is_test=True)
         self.val_loader = DataLoader3D(self.test_set, self.batch_size, patch_size=self.patch_size, dialate=False)
@@ -73,7 +76,7 @@ class NetworkTrainer():
             return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=verb)
         elif self.lr_schedule == 'ReducePlateau':
             return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=verb)
-        elif self.lr_schedule is None:
+        elif self.lr_schedule == 'Linear':
             return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=verb)
 
     def maybe_mkdir(self):
@@ -96,7 +99,7 @@ class NetworkTrainer():
         file.close()
 
     def finish(self):
-        with open(os.path.join(self.output_folder, 'log_file.txt'), 'a') as f:
+        with open(os.path   .join(self.output_folder, 'log_file.txt'), 'a') as f:
             now = datetime.now()
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
             f.write(f'\nFinished at {dt_string}, time elapsed: {now - self.start}')
@@ -222,13 +225,14 @@ class NetworkTrainer():
                     break
             self.validate(epoch)
             self.train_loss.append(np.mean(loss_here))
-            if isinstance(self.schduler, lr_s.ReduceLROnPlateau):
-                self.schduler.step(self.val_loss[-1])
-                self.learning_rate.append(self.optimizer.param_groups[0]['lr'])
-            else:
-                self.schduler.step()
-                self.learning_rate.append(self.schduler.get_last_lr())
-                self.write_tofile('Learning_Rate.csv', self.learning_rate[-1])
+            if self.schduler is not None:
+                if isinstance(self.schduler, lr_s.ReduceLROnPlateau):
+                    self.schduler.step(self.val_loss[-1])
+                    self.learning_rate.append(self.optimizer.param_groups[0]['lr'])
+                else:
+                    self.schduler.step()
+                    self.learning_rate.append(self.schduler.get_last_lr())
+                    self.write_tofile('Learning_Rate.csv', self.learning_rate[-1])
             self.write_tofile('Loss/Loss.csv', (self.train_loss[-1], self.val_loss[-1]))
 
     def __call__(self):
