@@ -19,7 +19,7 @@ data_folder = 'Numpy_Task3'
 out_folder = '3D_Unet_Train'
 sub_dir = 'crop_sub'
 alternate_folder = 'Segmentations'
-dir_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
+dir_path = os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_dir in folder])
