@@ -99,7 +99,7 @@ class NetworkTrainer():
         file.close()
 
     def finish(self):
-        with open(os.path   .join(self.output_folder, 'log_file.txt'), 'a') as f:
+        with open(os.path.join(self.output_folder, 'log_file.txt'), 'a') as f:
             now = datetime.now()
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
             f.write(f'\nFinished at {dt_string}, time elapsed: {now - self.start}')
