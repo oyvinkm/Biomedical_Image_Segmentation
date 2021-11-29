@@ -71,7 +71,7 @@ class NetworkTrainer():
         elif self.lr_schedule == 'Lambda': 
             lambda_1 = lambda epoch: (1-(epoch/self.epochs))**gamma
             return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=verb)
-        elif self.lr_schedule == 'ReducePlateau': 
+        elif self.lr_schedule == 'ReducePlateau':
             return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=verb)
         elif self.lr_schedule is None:
             return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=verb)
@@ -101,7 +101,6 @@ class NetworkTrainer():
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
             f.write(f'\nFinished at {dt_string}, time elapsed: {now - self.start}')
             f.close()
-
 
 
     def make_predictions(self):

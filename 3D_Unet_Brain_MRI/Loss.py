@@ -228,3 +228,30 @@ class DiceFocalLoss(nn.Module):
         total_loss: torch.Tensor = self.lambda_dice * dice_loss + self.lambda_focal * focal_loss
 
         return total_loss
+
+class FocalTversky(nn.Module):
+    def __init__(self, weight : tuple=(0.5, 0.5), 
+                gamma : float = 3, alpha : float = 3, 
+                reduction = 'mean', 
+                lamda_focal : float = 1., lambda_tversky : float = 1.):
+        super(FocalTversky, self).__init__()
+        self.reduction = reduction
+        self.lambda_focal = lamda_focal
+        self.lambda_tversky = lambda_tversky
+        self.focal = BinaryFocalLoss(alpha = alpha, gamma = gamma)
+        self.tversky = TverskyLoss(weight = weight)
+    def get_fields(self):
+        return {'dunno': 0}
+    def forward(self, output, target):
+        focal_loss = self.focal(output, target)
+        print(focal_loss.item())
+        tversky_loss = self.tversky(output, target)
+        print(tversky_loss.item())
+        total_loss = torch.Tensor([self.lambda_focal * focal_loss, self.lambda_tversky * tversky_loss])
+        if self.reduction == 'mean':
+            total_loss = torch.mean(total_loss)
+        elif self.reduction == 'sum':
+            total_loss = torch.sum(total_loss)
+        total_loss.requires_grad = True
+        return total_loss
+

@@ -1,7 +1,9 @@
 from torch.optim import lr_scheduler
 from Trainer import NetworkTrainer
 import torch
-from Loss import (DiceLoss, WeightedTverskyLoss, TverskyLoss, DiceFocalLoss, BinaryFocalLoss)
+from Loss import (DiceLoss, WeightedTverskyLoss, 
+                  TverskyLoss, DiceFocalLoss, 
+                  BinaryFocalLoss, FocalTversky)
 from preprocessing.datasetModule import Set
 from sklearn.model_selection import train_test_split
 import os
@@ -16,14 +18,14 @@ import nibabel as nib
 '''
 
 network = Dynamic_3DUnet #No need to change
-loss_func = BinaryFocalLoss(gamma=3.5)
+loss_func = FocalTversky()
 optimizer = torch.optim.Adam
 '''When choosing learning rate scheduele, either choose: 
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
-scheduler = 'ReducePlateau'
+scheduler = None
 batch_size = 2
-num_batches_per_epoch = 40 #Number of batches before new epoch
-epochs = 100
+num_batches_per_epoch = 1 #Number of batches before new epoch
+epochs = 3
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 4 #Number of base features in 3D
@@ -33,7 +35,6 @@ dialation_epochs = 50
 dialation = True
 #data_folder = 'Cropped_Task3'
 data_folder = 'Numpy_Task3' 
-
 out_folder = '3D_Unet_Train'
 sub_dir = 'crop_sub'
 alternate_folder = 'Segmentations'
