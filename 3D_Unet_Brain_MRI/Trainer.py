@@ -189,7 +189,7 @@ class NetworkTrainer():
 
     def get_accuracy_by_dice(self, output, target):
         smooth = 1e-5
-        threshold = torch.tensor([0.5])
+        threshold = torch.tensor([0.5]).to(self.device)
         inputs = (output[0][0]>threshold).float()
         inputs = inputs.view(-1)
         target = target.view(-1)

@@ -3,7 +3,7 @@ from Trainer import NetworkTrainer
 import torch
 from Loss import (DiceLoss, WeightedTverskyLoss, 
                   TverskyLoss, DiceFocalLoss, 
-                  BinaryFocalLoss, FocalTversky)
+                  BinaryFocalLoss, FocalTversky, BCEWLLoss)
 from preprocessing.datasetModule import Set
 from preprocessing.DataAugmentation import (AddGaussianNoise, 
 AddRicianNoise, FlipTransform)
@@ -17,28 +17,36 @@ import nibabel as nib
 
 data_folder = 'Numpy_Task3' 
 out_folder = '3D_Unet_Train'
-sub_dir = 'crop_sub'
+sub_2 = 'crop_sub-2'
+sub_1 = 'crop_sub-1'
 alternate_folder = 'Segmentations'
 dir_path = os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
-data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
+data_folders_1 = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
-                        and sub_dir in folder])
-train, test = train_test_split(data_folders, test_size = 0.15)
+                        and sub_1 in folder])
+data_folders_2 = sorted([folder for folder  in os.listdir(dir_path) if 
+                        os.path.isdir(os.path.join(dir_path, folder)) 
+                        and sub_2 in folder])
+train_1, test_1 = train_test_split(data_folders_1, test_size = 0.2)
+train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2)
+train = train_1 + train_2
+test = test_1 + test_2
 train, val = train_test_split(train, train_size=0.8)
+
 '''______________________________________________________________________________________________
                                             CHANGE VARIABLES HERE
    ______________________________________________________________________________________________
 '''
 
 network = Dynamic_3DUnet #No need to change
-loss_func = FocalTversky()
+loss_func = BCEWLLoss()
 optimizer = torch.optim.Adam
 '''When choosing learning rate scheduele, either choose: 
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = None
 batch_size = 2
-num_batches_per_epoch = len(train) #Number of batches before new epoch
-epochs = 2000
+num_batches_per_epoch = 1 #Number of batches before new epoch
+epochs = 1
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 8 #Number of base features in 3D
