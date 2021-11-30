@@ -10,6 +10,7 @@ def show_slices(slices, color = 'gray'):
     for i, slice in enumerate(slices):
         axes[i].imshow(slice.T, cmap=color, origin="lower")
     return axes
+#Text
 def slicing(img, x,y,z, cmap = 'gray'):
     slice_0 = img[x, :, :]
     slice_1 = img[:, y, :]
