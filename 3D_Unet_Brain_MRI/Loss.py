@@ -1,6 +1,7 @@
 from typing import Callable, Optional, Sequence, Union
 from torch import nn
 import torch
+from torch.functional import Tensor
 from torch.nn import Softmax
 import numpy as np
 from torch.nn.modules.loss import _Loss
@@ -8,7 +9,8 @@ from torch.nn.modules.loss import _Loss
 class DiceLoss(_Loss):
     def __init__(self, weight=None, size_average=True):
         super(DiceLoss, self).__init__()
-
+    def get_fields(self):
+        return {'empty' : 0}
     def forward(self, inputs, targets, smooth=1e-5):
         inputs = torch.sigmoid(inputs)
         inputs = inputs.view(-1)
@@ -244,9 +246,7 @@ class FocalTversky(nn.Module):
         return {'dunno': 0}
     def forward(self, output, target):
         focal_loss = self.focal(output, target)
-        print(focal_loss.item())
         tversky_loss = self.tversky(output, target)
-        print(tversky_loss.item())
         total_loss = torch.Tensor([self.lambda_focal * focal_loss, self.lambda_tversky * tversky_loss])
         if self.reduction == 'mean':
             total_loss = torch.mean(total_loss)
@@ -255,3 +255,9 @@ class FocalTversky(nn.Module):
         total_loss.requires_grad = True
         return total_loss
 
+class BCEWLLoss(nn.BCEWithLogitsLoss):
+    def __init__(self, weight: Optional[Tensor] = None, size_average=None, reduce=None, reduction: str = 'mean', pos_weight: Optional[Tensor] = None) -> None:
+        super().__init__(weight=weight, size_average=size_average, reduce=reduce, reduction=reduction, pos_weight=pos_weight)
+
+    def get_fields(self):
+        return {'empty' : 0}

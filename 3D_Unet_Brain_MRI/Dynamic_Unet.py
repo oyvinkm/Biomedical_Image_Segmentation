@@ -178,7 +178,6 @@ class Dynamic_3DUnet(nn.Module):
         self.encode_path = nn.ModuleList(self.encoder_block)
         self.upconv_path = nn.ModuleList(self.upconv)
 
-
     def forward(self, x):
         skips = []
         for d in range(len(self.decode_path) - 1):
