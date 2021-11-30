@@ -21,7 +21,7 @@ class Set(Dataset):
         data = sorted([name for name in os.listdir(sub_folder) if os.path.isfile(os.path.join(sub_folder,name)) and 'masked' in name])
         seg = sorted([name for name in os.listdir(sub_folder) if os.path.isfile(os.path.join(sub_folder,name)) and 'Lacunes' in name])
         return data, seg
-        
+       #Text 
     def __getitem__(self, index):
         path = os.path.join(self.data_path, self.folders[index])
         data, seg = self.folders_cont[index]

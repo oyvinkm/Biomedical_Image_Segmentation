@@ -5,7 +5,7 @@ import random
 from scipy.ndimage.interpolation import map_coordinates
 import torch
 from scipy.ndimage import map_coordinates
-
+#Text
 def augment_gaussian_noise(data_sample: np.ndarray, noise_variance: Tuple[float, float] = (0, 0.1),
                            p_per_channel: float = 1, per_channel: bool = False) -> np.ndarray:
     if not per_channel:

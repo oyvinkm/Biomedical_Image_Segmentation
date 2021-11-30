@@ -5,7 +5,7 @@ import warnings
 from collections import OrderedDict
 from warnings import warn
 
-
+#Text
 class DataLoaderBase(object):
     def __init__(self, data, BATCH_SIZE, num_batches, number_of_threads_in_multithreaded=None):
         """

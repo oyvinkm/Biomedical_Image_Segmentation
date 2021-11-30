@@ -100,7 +100,7 @@ class DataLoader3D(DataLoaderBase):
             lb = new_min
             ub = new_max
         return slice(lb, ub)
-        
+    #Text
     def generate_train_batch(self):
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
