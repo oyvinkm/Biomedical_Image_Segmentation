@@ -121,8 +121,9 @@ class NetworkTrainer():
         save_nii(output[0][0].detach().cpu().numpy(),affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}uncertain_SEG.nii.gz'))
         threshold = torch.tensor([0.5])
-        result = (output[0][0]>threshold).float()
-        save_nii(result.detach().cpu().numpy(), affine=affine, name=os.path.join(self.output_folder, 
+        out = output[0][0].detach().cpu()
+        result = (out>threshold).float()
+        save_nii(result.numpy(), affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{num+1}certain_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
                 affine=affine,
