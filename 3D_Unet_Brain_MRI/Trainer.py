@@ -17,7 +17,7 @@ import csv
 from Image_Functions import save_slice, show_slices, save_nii
 from matplotlib import pyplot as plt
 from datetime import datetime
-
+#Text
 
 class NetworkTrainer():
     def __init__(self, device,  network : nn.Module, epochs : int, 

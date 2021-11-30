@@ -32,7 +32,7 @@ train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2)
 train = train_1 + train_2
 test = test_1 + test_2
 train, val = train_test_split(train, train_size=0.8)
-
+#Text
 '''______________________________________________________________________________________________
                                             CHANGE VARIABLES HERE
    ______________________________________________________________________________________________
