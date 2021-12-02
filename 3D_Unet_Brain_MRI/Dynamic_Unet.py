@@ -135,27 +135,24 @@ class Dynamic_3DUnet(nn.Module):
         in_features = self.in_channels
         out_features = self.base_features
         
+        self.first_layer = StackedLayers(in_features, out_features, 1, self.conv_op, 
+                                                    self.conv_kwargs, self.norm_op, self.norm_kwargs, 
+                                                    self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
+                                                    basic_block= basic_block)
+        in_features = self.base_features
+        out_features = in_features * 2
         for d in range(self.depth):
-            if d == 0:
-                self.num_conv_layer = 3
-
-            else: 
-                self.num_conv_layer = 2
-
             self.decoder_block.append(StackedLayers(in_features, out_features, 2, self.conv_op, 
                                                     self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                     self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
-                                                    basic_block= basic_block))
+                                                    basic_block= basic_block))                                             
+            in_features = self.decoder_block[d].out_channels 
             if d != self.depth - 1:
                 self.num_maxpools += 1
-            in_features = self.decoder_block[d].out_channels
-            if d != self.depth - 2:
-                out_features = in_features * 2
-            else:
-                out_features = in_features * 4
+            out_features = in_features * 2
 
 
-        for e in reversed(range(len(self.decoder_block) - 1)):
+        for e in reversed(range(len(self.decoder_block)-1)):
             if not isinstance(self.decoder_block[e], nn.MaxPool3d):
                 up_features = self.decoder_block[e + 1].out_channels
                 out_features = self.decoder_block[e].out_channels
@@ -168,11 +165,11 @@ class Dynamic_3DUnet(nn.Module):
                                                         self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
                                                         basic_block= basic_block))
                 if e == 0:
-                    self.encoder_block.append(StackedLayers(skip_feat, out_features, 2, self.conv_op, 
+                    self.encoder_block.append(StackedLayers(skip_feat, out_features//2, 2, self.conv_op, 
                                                         self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                         self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
                                                         basic_block= basic_block))
-                    self.conv = self.conv_op(out_features, 1, **self.conv_kwargs)
+                    self.conv = self.conv_op(out_features//2, 1, **self.conv_kwargs)
                     self.encoder_block.append(nn.Sequential(self.conv, self.final_nonlin_op))
         self.decode_path = nn.ModuleList(self.decoder_block)
         self.encode_path = nn.ModuleList(self.encoder_block)
@@ -180,13 +177,12 @@ class Dynamic_3DUnet(nn.Module):
 
     def forward(self, x):
         skips = []
+        x = self.first_layer(x)
         for d in range(len(self.decode_path) - 1):
             x = self.decode_path[d](x)
             skips.append(x)
             x = self.maxpool_op(x)
-
         x = self.decode_path[-1](x)
-
         for e in range(len(self.encode_path)):
             if e != len(self.encode_path) - 1:
                 x = self.upconv[e](x)

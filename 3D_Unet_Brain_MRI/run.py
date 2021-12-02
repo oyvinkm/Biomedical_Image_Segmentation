@@ -11,10 +11,14 @@ from torchvision import transforms
 from sklearn.model_selection import train_test_split
 import os
 from torch import nn
+import numpy as np
+import random
 from Model import CNN
 from Dynamic_Unet import Dynamic_3DUnet, ConvDropoutNonlinNorm, ConvDropoutNormNonlin
 import nibabel as nib
 
+np.random.seed(2021)
+random.seed(2021)
 data_folder = 'Numpy_Task3' 
 out_folder = '3D_Unet_Train'
 sub_2 = 'crop_sub-2'
@@ -27,8 +31,8 @@ data_folders_1 = sorted([folder for folder  in os.listdir(dir_path) if
 data_folders_2 = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_2 in folder])
-train_1, test_1 = train_test_split(data_folders_1, test_size = 0.2)
-train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2)
+train_1, test_1 = train_test_split(data_folders_1, test_size = 0.2, random_state=11)
+train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2, random_state=11)
 train = train_1 + train_2
 test = test_1 + test_2
 train, val = train_test_split(train, train_size=0.8)
@@ -39,17 +43,17 @@ train, val = train_test_split(train, train_size=0.8)
 '''
 
 network = Dynamic_3DUnet #No need to change
-loss_func = BCEWLLoss()
+loss_func = BinaryFocalLoss()
 optimizer = torch.optim.Adam
 '''When choosing learning rate scheduele, either choose: 
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
-scheduler = None
+scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = 1 #Number of batches before new epoch
-epochs = 1
+num_batches_per_epoch = len(train) #Number of batches before new epoch
+epochs = 100
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
-base_features = 8 #Number of base features in 3D
+base_features = 4 #Number of base features in 3D
 #transform = transforms.Compose([AddGaussianNoise(p_per_sample = 0.5, p_per_channel = 0.5), 
                                  #FlipTransform(prob = 0.4)])
 learning_rate = 0.01
@@ -96,7 +100,7 @@ X_test = Set(dir_path, test)
 X_val = Set(dir_path, val)
 
 
-net_trainer = NetworkTrainer(device = device, network=network, epochs = epochs, loss_func=loss_func, batch_size=batch_size,
+net_trainer = NetworkTrainer(device = device, network=network, epochs = epochs, dir_path=dir_path, loss_func=loss_func, batch_size=batch_size,
                             patch_size=(128,128,128), num_batches=num_batches_per_epoch, 
                             lr=learning_rate, train_set=X_train, test_set=X_test, val_set=X_val, optimizer=optimizer, 
                             output_folder=out_folder, affine_sub2=test_imgur_affine_sub2, affine_sub1=test_imgur_affine_sub1, 

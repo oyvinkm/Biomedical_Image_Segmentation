@@ -17,10 +17,11 @@ import csv
 from Image_Functions import save_slice, show_slices, save_nii
 from matplotlib import pyplot as plt
 from datetime import datetime
+from distutils.dir_util import copy_tree
 #Text
 
 class NetworkTrainer():
-    def __init__(self, device,  network : nn.Module, epochs : int, 
+    def __init__(self, device,  network : nn.Module, epochs : int, dir_path,
                 loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int,
                 lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
                 output_folder : str, affine_sub2, affine_sub1, model_kwargs : OrderedDict, 
@@ -46,6 +47,7 @@ class NetworkTrainer():
         self.batch_size = batch_size
         self.loss_func = loss_func
         self.epochs = epochs
+        self.dir_path = dir_path
         self.train_loss = []
         self.val_loss = []
         self.test_loss = []
@@ -87,6 +89,7 @@ class NetworkTrainer():
             os.mkdir(os.path.join(self.output_folder, 'Test'))
             os.mkdir(os.path.join(self.output_folder, 'Loss'))
             os.mkdir(os.path.join(self.output_folder, 'Accuracy'))
+    
 
 
     def create_log_file(self):
@@ -117,17 +120,18 @@ class NetworkTrainer():
             affine = self.test_img_affine_sub1
         else: 
             affine = self.test_img_affine_sub2
-        
+        os.mkdir(os.path.join(self.output_folder, f'Test/{key}'))
+        copy_tree(os.path.join(self.dir_path, key), os.path.join(self.output_folder, f'Test/{key}'))
         save_nii(output[0][0].detach().cpu().numpy(),affine=affine, name=os.path.join(self.output_folder, 
-                f'Test/{num+1}uncertain_SEG.nii.gz'))
+                f'Test/{key}/{num+1}uncertain_SEG.nii.gz'))
         threshold = torch.tensor([0.5])
         out = output[0][0].detach().cpu()
         result = (out>threshold).float()
         save_nii(result.numpy(), affine=affine, name=os.path.join(self.output_folder, 
-                f'Test/{num+1}certain_SEG.nii.gz'))
+                f'Test/{key}/{num+1}certain_SEG.nii.gz'))
         save_nii(seg[0][0].detach().cpu().numpy(), 
                 affine=affine,
-                name=os.path.join(self.output_folder, f'Test/{num+1}_GT.nii.gz'))
+                name=os.path.join(self.output_folder, f'Test/{key}/{num+1}_GT.nii.gz'))
         plt.close()
 
     def save_slice_epoch(self,output, seg, epoch):

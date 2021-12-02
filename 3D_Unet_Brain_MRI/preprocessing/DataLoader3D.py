@@ -8,14 +8,16 @@ from scipy.ndimage import binary_fill_holes
 from scipy import ndimage
 from typing import Any, List, Optional, Sequence, Union, Tuple
 import random
+import csv
 import torch
 import torchio as tio
 
 
 class DataLoader3D(DataLoaderBase):
 
-    def __init__(self, data, BATCH_SIZE,  patch_size = None, is_test = False, pad_mode = 'edge',  
-                    pad_kwargs_data = None, to_tensor = True, dialate : bool = False, iterations = 1, alpha : float = 0.6
+    def __init__(self, data, BATCH_SIZE, patch_size = None, is_test = False, pad_mode = 'edge',  
+                    pad_kwargs_data = None, to_tensor = True, dialate : bool = False, 
+                    iterations = 1, alpha : float = 0.6
                     ):
         
         super(DataLoader3D, self).__init__(data, BATCH_SIZE, None)
@@ -100,7 +102,7 @@ class DataLoader3D(DataLoaderBase):
             lb = new_min
             ub = new_max
         return slice(lb, ub)
-    #Text
+
     def generate_train_batch(self):
         selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
         selected_keys = [self._data[k]['key'] for k in selected_index]
@@ -173,14 +175,15 @@ class DataLoader3D(DataLoaderBase):
             "In case it's the testing set, don't create patches"
             max_x, max_y, max_z = 0, 0, 0
             data_list = []
-            for i, j in enumerate(self.test_index):
-                "iterating through the batch to get the max x, y and z position"
-                data = self._data[j]
-                data_shape = data['data'][0].shape
-                max_x = max(max_x, data_shape[0])
-                max_y = max(max_y, data_shape[1])
-                max_z = max(max_z, data_shape[2])
-                data_list.append(data)
+            "iterating through the batch to get the max x, y and z position"
+            data = self._data[self.test_index[-1]]
+            selected_keys = data['key']
+            data_shape = data['data'][0].shape
+            max_x = max(max_x, data_shape[0])
+            max_y = max(max_y, data_shape[1])
+            max_z = max(max_z, data_shape[2])
+            data_list.append(data)
+
             "ensures that the value can go 3 layers deep in a neural network"
             max_x = max_x + (8 - (max_x % 8))
             max_z = max_z + (8 - (max_z % 8))
