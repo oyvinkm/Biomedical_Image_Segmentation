@@ -71,7 +71,7 @@ class NetworkTrainer():
         self.create_log_file()
         self.write_tofile('Loss/Loss.csv', ('Train', 'Validation'))
 
-    def interchangable_lr(self, gamma=0.9):
+    def interchangable_lr(self, verb = False, gamma=0.9):
         if self.lr_schedule == 'Exponential':
             return (lr_s.ExponentialLR(optimizer=self.optimizer, gamma=gamma, verbose=False))
         elif self.lr_schedule == 'Lambda': 
