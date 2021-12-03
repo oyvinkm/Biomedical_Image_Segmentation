@@ -21,7 +21,7 @@ from distutils.dir_util import copy_tree
 #Text
 
 class NetworkTrainer():
-    def __init__(self, device,  network : nn.Module, epochs : int, dir_path,
+    def __init__(self, device,  network : nn.Module, epochs : int, image_path,
                 loss_func : nn.Module, batch_size : int, patch_size : tuple, num_batches : int,
                 lr : float, train_set : Set, test_set : Set, val_set : Set, optimizer : Optimizer, 
                 output_folder : str, affine_sub2, affine_sub1, model_kwargs : OrderedDict, 
@@ -47,7 +47,7 @@ class NetworkTrainer():
         self.batch_size = batch_size
         self.loss_func = loss_func
         self.epochs = epochs
-        self.dir_path = dir_path
+        self.image_path = image_path
         self.train_loss = []
         self.val_loss = []
         self.test_loss = []
@@ -71,16 +71,16 @@ class NetworkTrainer():
         self.create_log_file()
         self.write_tofile('Loss/Loss.csv', ('Train', 'Validation'))
 
-    def interchangable_lr(self, verb=False, gamma=0.9):
+    def interchangable_lr(self, gamma=0.9):
         if self.lr_schedule == 'Exponential':
-            return (lr_s.ExponentialLR(optimizer=self.optimizer, gamma=gamma, verbose=verb))
+            return (lr_s.ExponentialLR(optimizer=self.optimizer, gamma=gamma, verbose=False))
         elif self.lr_schedule == 'Lambda': 
             lambda_1 = lambda epoch: (1-(epoch/self.epochs))**gamma
-            return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=verb)
+            return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=False)
         elif self.lr_schedule == 'ReducePlateau':
-            return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=verb)
+            return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=False)
         elif self.lr_schedule == 'Linear':
-            return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=verb)
+            return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=False)
 
     def maybe_mkdir(self):
         if not os.path.exists(self.output_folder):
@@ -120,8 +120,9 @@ class NetworkTrainer():
             affine = self.test_img_affine_sub1
         else: 
             affine = self.test_img_affine_sub2
+        key = str.replace(key, 'numpy_', '')
         os.mkdir(os.path.join(self.output_folder, f'Test/{key}'))
-        copy_tree(os.path.join(self.dir_path, key), os.path.join(self.output_folder, f'Test/{key}'))
+        copy_tree(os.path.join(self.image_path, key), os.path.join(self.output_folder, f'Test/{key}'))
         save_nii(output[0][0].detach().cpu().numpy(),affine=affine, name=os.path.join(self.output_folder, 
                 f'Test/{key}/{num+1}uncertain_SEG.nii.gz'))
         threshold = torch.tensor([0.5])
