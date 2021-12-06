@@ -49,8 +49,8 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = len(train) #Number of batches before new epoch
-epochs = 200
+num_batches_per_epoch = 1 #Number of batches before new epoch
+epochs = 2
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 4 #Number of base features in 3D

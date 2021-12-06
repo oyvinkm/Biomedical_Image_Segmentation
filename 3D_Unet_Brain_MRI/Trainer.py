@@ -191,7 +191,7 @@ class NetworkTrainer():
                     os.path.join('Accuracy', f'Accuracy_{self.epochs}_{type(self.loss_func).__name__}')))
         np.savetxt(os.path.join(self.output_folder, 'Accuracy/Average_accuracy.csv'), [np.mean(self.accuracy)], 
                           delimiter=",", fmt='%s')
-
+        plt.close()
     def get_accuracy_by_dice(self, output, target):
         smooth = 1e-5
         threshold = torch.tensor([0.5]).to(self.device)

@@ -99,7 +99,7 @@ class BinaryFocalLoss(_Loss):
         balance_index: (int) balance class index, should be specific when alpha is float
     """
 
-    def __init__(self, alpha=3, gamma=2, ignore_index=None, reduction='mean', **kwargs):
+    def __init__(self, alpha=.3, gamma=2, ignore_index=None, reduction='mean', **kwargs):
         super(BinaryFocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -115,24 +115,28 @@ class BinaryFocalLoss(_Loss):
         #prob = torch.sigmoid(output)
         prob = torch.clamp(output, self.smooth, 1.0 - self.smooth)
 
-        valid_mask = None
-        if self.ignore_index is not None:
-            valid_mask = (target != self.ignore_index).float()
-
         pos_mask = (target == 1).float()
         neg_mask = (target == 0).float()
-        if valid_mask is not None:
-            pos_mask = pos_mask * valid_mask
-            neg_mask = neg_mask * valid_mask
 
-        pos_weight = (pos_mask * torch.pow(1 - prob, self.gamma)).detach()
-        pos_loss = -pos_weight * torch.log(prob)  # / (torch.sum(pos_weight) + 1e-4)
+        probs_neg = 1 - prob
+        pos_weight = (pos_mask * torch.pow(1 - prob, self.gamma))
+        pos_loss = -self.alpha * pos_weight * nn.LogSigmoid()(prob)  
 
-        neg_weight = (neg_mask * torch.pow(prob, self.gamma)).detach()
-        neg_loss = -self.alpha * neg_weight * nn.LogSigmoid()(-output)  # / (torch.sum(neg_weight) + 1e-4)
-        loss = pos_loss + neg_loss
-        loss = loss.mean()
-        return loss   
+        neg_weight = (neg_mask * torch.pow(prob, self.gamma))
+        neg_loss = -(1-self.alpha )* neg_weight * nn.LogSigmoid()(probs_neg)
+        loss_tmp = pos_loss + neg_loss
+        print('loss_mean = ', torch.mean(loss_tmp))
+        print('loss_sum = ', torch.sum(loss_tmp))
+        print(loss_tmp.shape)
+        if self.reduction == 'none':
+            loss = loss_tmp
+        elif self.reduction == 'mean':
+            loss = torch.mean(loss_tmp)
+        elif self.reduction == 'sum':
+            loss = torch.sum(loss_tmp)
+        else:
+            raise NotImplementedError(f"Invalid reduction mode: {self.reduction}")
+        return loss
 
 
 class DiceFocalLoss(nn.Module):
@@ -145,19 +149,7 @@ class DiceFocalLoss(nn.Module):
 
     def __init__(
         self,
-        include_background: bool = True,
-        to_onehot_y: bool = False,
-        sigmoid: bool = False,
-        softmax: bool = False,
-        other_act: Optional[Callable] = None,
-        squared_pred: bool = False,
-        jaccard: bool = False,
         reduction: str = "mean",
-        smooth_nr: float = 1e-5,
-        smooth_dr: float = 1e-5,
-        batch: bool = False,
-        gamma: float = 2.0,
-        focal_weight: Optional[Union[Sequence[float], float, int, torch.Tensor]] = None,
         lambda_dice: float = 1.0,
         lambda_focal: float = 1.0,
     ) -> None:
