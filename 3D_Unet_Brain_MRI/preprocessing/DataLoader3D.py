@@ -8,6 +8,7 @@ from scipy.ndimage import binary_fill_holes
 from scipy import ndimage
 from typing import Any, List, Optional, Sequence, Union, Tuple
 import random
+from datetime import datetime
 import csv
 import torch
 import torchio as tio
@@ -40,8 +41,8 @@ class DataLoader3D(DataLoaderBase):
         self.alpha = alpha
         self.dialeteshape = ndimage.generate_binary_structure(rank=4, connectivity=1)
 
-    def get_seg_position(self, indx):
-        seg_pos = np.where(self._data[indx]['seg'][0] != 0)
+    def get_seg_position(self, seg):
+        seg_pos = np.where(seg[0] != 0)
         if (len(seg_pos[0]) == 0 and len(seg_pos[1]) == 0 and len(seg_pos[2]) == 0):
             seg_pos = None
         return seg_pos
@@ -104,8 +105,8 @@ class DataLoader3D(DataLoaderBase):
         return slice(lb, ub)
 
     def generate_train_batch(self):
-        selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, True, None)
-        selected_keys = [self._data[k]['key'] for k in selected_index]
+        selected_index = np.random.choice(self.data_len, self.BATCH_SIZE, False, None)
+        selected_keys = []
         if not self.is_test:
             "create patches if it's not testing"
             data = np.zeros(self.data_shape, dtype=np.float32)
@@ -113,8 +114,13 @@ class DataLoader3D(DataLoaderBase):
             # i = batch number
             # j = index
             for i, j in enumerate(selected_index):
-                seg_pos = self.get_seg_position(j)
-                data_shape = self._data[j]['data'][0].shape
+                loaded = self._data[j]
+                l_data = loaded['data']
+                l_seg = loaded['seg']
+                selected_keys.append(loaded['key'])
+                seg_pos = self.get_seg_position(l_seg)
+                data_shape = l_data[0].shape
+                del loaded
                 if seg_pos is not None:
                     min_x = int(np.min(seg_pos[0]))
                     max_x = int(np.max(seg_pos[0]))
@@ -149,9 +155,9 @@ class DataLoader3D(DataLoaderBase):
                     else:
                     #The lacune regions fits in the patch
                         resizer_data, resizer_seg = self.get_random_center(data_shape, x, y, z)
-                    cropped_data = self._data[j]['data'][resizer_data]
+                    cropped_data = l_data[resizer_data]
                     data[i] = cropped_data
-                    cropped_seg = self._data[j]['seg'][resizer_seg]
+                    cropped_seg = l_seg[resizer_seg]
                     seg[i] = cropped_seg
                     if self.dialate:
                             dialated = ndimage.binary_dilation(seg[i], self.dialeteshape, iterations=self.iterations)
@@ -167,9 +173,9 @@ class DataLoader3D(DataLoaderBase):
                     ub_z = lb_z + self.patch_size[2]
                     resizer_data = (slice(0,3),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
                     resizer_seg = (slice(0,1),slice(lb_x, ub_x), slice(lb_y, ub_y), slice(lb_z, ub_z))
-                    cropped_data = self._data[j]['data'][resizer_data]
+                    cropped_data = l_data[resizer_data]
                     data[i] = cropped_data
-                    cropped_seg = self._data[j]['seg'][resizer_seg]
+                    cropped_seg = l_seg[resizer_seg]
                     seg[i] = cropped_seg
         else:
             "In case it's the testing set, don't create patches"

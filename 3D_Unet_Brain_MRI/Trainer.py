@@ -94,12 +94,12 @@ class NetworkTrainer():
 
     def create_log_file(self):
         log = ( f"Test {self.start_string} with the following parameters \nLoss funciton: {type(self.loss_func).__name__}, param: {self.loss_func.get_fields()}\n"
-                f"Optimizer: {type(self.optimizer).__name__}\nLearning Rate Schedule: {self.lr_schedule}"
+                f"Optimizer: {type(self.optimizer).__name__}\nLearning Rate Schedule: {self.lr_schedule}\n"
                 f"Epochs: {self.epochs}\nBatch_size: {self.batch_size}\n"
                 f"Number of batches per epoch: {self.num_batches}\n"
                 f"Model parameters: {self.model_kwargs}\nDialation: {self.dialate}\n"
                 f"      If true: on first {self.dialate_epochs} epochs"
-                f" with p = {self.dialate_p}")
+                f" with p = {self.dialate_p}\n")
         file = open(os.path.join(self.output_folder, 'log_file.txt'), 'w')
         file.write(log)
         file.close()
@@ -183,7 +183,7 @@ class NetworkTrainer():
         plt.close()
 
     def create_accuracy_output(self):
-        plt.plot(self.accuracy)
+        plt.bar([i+1 for i in range(len(self.accuracy))],self.accuracy, log = True)
         plt.ylabel('Accuracy')
         plt.xlabel('pic number')
         plt.suptitle(f'Accuracy for each picture during testing')

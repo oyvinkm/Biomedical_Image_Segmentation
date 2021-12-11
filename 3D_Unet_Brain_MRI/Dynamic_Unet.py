@@ -35,7 +35,7 @@ class ConvDropoutNormNonlin(nn.Module):
             self.dropout = None
         
         self.instnorm = self.norm_op(out_channels,**self.norm_kwargs)
-        if self.nonlin_kwargs is not None:
+        if self.nonlin_kwargs is not None and self.instnorm is not None:
             self.nonlin= self.nonlin_op(**self.nonlin_kwargs)
         else: 
             self.nonlin = self.nonlin_op()

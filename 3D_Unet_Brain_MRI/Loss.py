@@ -125,9 +125,6 @@ class BinaryFocalLoss(_Loss):
         neg_weight = (neg_mask * torch.pow(prob, self.gamma))
         neg_loss = -(1-self.alpha )* neg_weight * nn.LogSigmoid()(probs_neg)
         loss_tmp = pos_loss + neg_loss
-        print('loss_mean = ', torch.mean(loss_tmp))
-        print('loss_sum = ', torch.sum(loss_tmp))
-        print(loss_tmp.shape)
         if self.reduction == 'none':
             loss = loss_tmp
         elif self.reduction == 'mean':

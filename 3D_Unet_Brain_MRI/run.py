@@ -6,7 +6,7 @@ from Loss import (DiceLoss, WeightedTverskyLoss,
                   BinaryFocalLoss, FocalTversky, BCEWLLoss)
 from preprocessing.datasetModule import Set
 from preprocessing.DataAugmentation import (AddGaussianNoise, 
-AddRicianNoise, FlipTransform)
+AddRicianNoise, FlipTransform, ElasticDeform)
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
 import os
@@ -49,14 +49,13 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = 1 #Number of batches before new epoch
-epochs = 2
+num_batches_per_epoch = 13 #Number of batches before new epoch
+epochs = 300
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
-base_features = 4 #Number of base features in 3D
-transform = transforms.Compose([AddGaussianNoise(p_per_sample = 0.5, p_per_channel = 0.5), 
-                                 FlipTransform(prob = 0.4)])
-learning_rate = 0.01
+base_features = 8 #Number of base features in 3D
+transform = transforms.Compose([AddGaussianNoise(p_per_sample = .4, p_per_channel = .4), FlipTransform(prob = .3)])
+learning_rate = 0.001
 dialation_prob = 0.6
 dialation_epochs = 50
 dialation = True
@@ -96,6 +95,7 @@ data_folders = sorted([folder for folder  in os.listdir(dir_path) if
                         and sub_dir in folder])
 train, test = train_test_split(data_folders, test_size = 0.15)
 train, val = train_test_split(train, train_size=0.8)
+
 X_train = Set(dir_path, train, transform=transform)
 X_test = Set(dir_path, test)
 X_val = Set(dir_path, val)

@@ -3,6 +3,7 @@ import abc
 from warnings import warn
 from typing import Optional, Sequence, Union, Tuple
 import numpy as np
+import elasticdeform
 from numpy.lib.type_check import real
 from preprocessing.augmentation_funcs import (  augment_gaussian_noise, 
                                                 augment_rician_noise, 
@@ -82,6 +83,25 @@ class FlipTransform(object):
                 sample[self.seg_key][d] = np.ascontiguousarray(np.flip(sample[self.seg_key][d], map_spatial_axes(sample[self.seg_key][d].ndim, self.spatial_axis)))
         return sample
 
+class ElasticDeform(object):
+    def __init__(self, data_key = 'data', seg_key = 'seg', 
+                sigma : int = 25, points = 3, prob : float = .1):
+        self.data_key = data_key
+        self.seg_key = seg_key
+        self.prob = prob
+        self.sigma = sigma
+        self.points = points
+    def __call__(self, sample):
+        rand = np.random.uniform()
+        print(rand)
+        if rand < self.prob:
+            print(sample[self.data_key].shape)
+            [X_deform, Y_deform] = elasticdeform.deform_random_grid([sample[self.data_key], 
+                                    sample[self.seg_key]], sigma=self.sigma, 
+                                    points=self.points, axis=[(1,2,3),(1,2,3)], order=[5,0]) 
+            print(X_deform.shape)
+            sample[self.data_key], sample[self.seg_key] = X_deform, Y_deform
+        return sample
 class ToTensor(object):
 
     def __init__(self, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None) -> None:
