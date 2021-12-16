@@ -54,6 +54,7 @@ class NetworkTrainer():
         self.learning_rate = []
         self.accuracy = []
         self.network= network
+        self.val_accuracy = []
         self.device = device
 
     def initialize(self):
@@ -78,7 +79,7 @@ class NetworkTrainer():
             lambda_1 = lambda epoch: (1-(epoch/self.epochs))**gamma
             return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=False)
         elif self.lr_schedule == 'ReducePlateau':
-            return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=False)
+            return lr_s.ReduceLROnPlateau(self.optimizer,  'min', factor = .5, verbose=False)
         elif self.lr_schedule == 'Linear':
             return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=False)
 
@@ -165,7 +166,13 @@ class NetworkTrainer():
         plt.savefig(os.path.join(self.output_folder, 
                     os.path.join('Loss', f'Train_oss_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
-
+        plt.plot(self.val_accuracy)
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.suptitle(f'Validation Accuracy per epoch 3DUnet with {type(self.loss_func).__name__}')
+        plt.savefig(os.path.join(self.output_folder, 
+                    os.path.join('Accuracy', f'Val_Accuracy_{self.epochs}_{type(self.loss_func).__name__}')))
+        plt.close()
         plt.plot(self.val_loss)
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
@@ -192,10 +199,11 @@ class NetworkTrainer():
         np.savetxt(os.path.join(self.output_folder, 'Accuracy/Average_accuracy.csv'), [np.mean(self.accuracy)], 
                           delimiter=",", fmt='%s')
         plt.close()
+
     def get_accuracy_by_dice(self, output, target):
         smooth = 1e-5
         threshold = torch.tensor([0.5]).to(self.device)
-        inputs = (output[0][0]>threshold).float()
+        inputs = (output>threshold).float()
         inputs = inputs.view(-1)
         target = target.view(-1)
         intersection = (inputs*target).sum()
@@ -205,15 +213,23 @@ class NetworkTrainer():
     def validate(self, epoch):
         with torch.no_grad():
             val_loss = []
+            accuracy = []
             for i, image_set in enumerate(self.val_loader):
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
                 output = self.network(image)
                 loss = self.loss_func(output, label)
                 val_loss.append(loss.item())
+                if epoch % 10 == 0:
+                    accuracy.append(self.get_accuracy_by_dice(output, label))
                 if i == self.val_loader.get_data_length() - 1:
-                    self.save_slice_epoch(output, label, epoch)
+                    if epoch % 10 == 0:
+                        print(epoch)
+                        self.val_accuracy.append(np.mean(accuracy))
+                        self.write_tofile('Accuracy/Val_Acc.csv', [self.val_accuracy[-1]])
+                        self.save_slice_epoch(output, label, epoch)
                     break
+        
         self.val_loss.append(np.mean(val_loss))
 
     def test(self):
@@ -240,9 +256,9 @@ class NetworkTrainer():
         self.loss = []
         for epoch in range(self.epochs):
             loss_here = []
-            if epoch <= 20 and epoch % 2 == 0:
+            if epoch <= self.dialate_epochs and epoch % 2 == 0:
                 self.train_loader.UpdateDialPad(-1)
-            elif epoch == 20:
+            elif epoch == self.dialate_epochs:
                 self.train_loader.ToggleDialate(dialate = False)     
             for i, image_set in enumerate(self.train_loader):
                 image = image_set['data'].to(self.device)
