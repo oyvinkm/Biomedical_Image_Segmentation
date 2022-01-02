@@ -205,19 +205,14 @@ class NetworkTrainer():
     def validate(self, epoch):
         with torch.no_grad():
             val_loss = []
-            accuracy = []
             for i, image_set in enumerate(self.val_loader):
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
                 output = self.network(image)
                 loss = self.loss_func(output, label)
                 val_loss.append(loss.item())
-                if epoch % 10 == 0:
-                    accuracy.append(self.get_accuracy_by_dice(output, label))
                 if i == self.val_loader.get_data_length() - 1:
-                    if epoch % 10 == 0:
-                        self.write_tofile('Accuracy/Val_Acc.csv', [np.mean(accuracy)])
-                        self.save_slice_epoch(output, label, epoch)
+                    self.save_slice_epoch(output, label, epoch)
                     break
         self.val_loss.append(np.mean(val_loss))
 
