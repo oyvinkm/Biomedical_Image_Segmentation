@@ -54,6 +54,7 @@ class NetworkTrainer():
         self.learning_rate = []
         self.accuracy = []
         self.network= network
+        self.val_accuracy = []
         self.device = device
 
     def initialize(self):
@@ -78,7 +79,7 @@ class NetworkTrainer():
             lambda_1 = lambda epoch: (1-(epoch/self.epochs))**gamma
             return lr_s.LambdaLR(self.optimizer, lr_lambda=[lambda_1], verbose=False)
         elif self.lr_schedule == 'ReducePlateau':
-            return lr_s.ReduceLROnPlateau(self.optimizer, 'min', verbose=False)
+            return lr_s.ReduceLROnPlateau(self.optimizer,  'min', factor = .5, verbose=False)
         elif self.lr_schedule == 'Linear':
             return lr_s.LinearLR(self.optimizer, start_factor=0.4, total_iters=self.epochs - 1, verbose=False)
 
@@ -133,7 +134,7 @@ class NetworkTrainer():
         save_nii(seg[0][0].detach().cpu().numpy(), 
                 affine=affine,
                 name=os.path.join(self.output_folder, f'Test/{key}/{num+1}_GT.nii.gz'))
-        plt.close()
+
 
     def save_slice_epoch(self,output, seg, epoch):
         save_slice(output[0][0].detach().cpu().numpy(), 
@@ -156,16 +157,15 @@ class NetworkTrainer():
         plt.suptitle(f'Learning Rate 3DUnet with {self.lr_schedule}')
         plt.savefig(os.path.join(self.output_folder, 'Learning_Rate'))
         plt.close()
-        np.savetxt(os.path.join(self.output_folder, 'Loss/Test_Loss.csv'), self.test_loss, 
+        np.savetxt(os.path.join(self.output_folder, 'Loss/Learning_Rate.csv'), self.test_loss, 
                           delimiter=",", fmt='%s')
-        plt.plot(self.train_loss)
-        plt.ylabel('Loss')
+        plt.plot(self.val_accuracy)
+        plt.ylabel('Accuracy')
         plt.xlabel('Epochs')
-        plt.suptitle(f'Training loss per epoch 3DUnet with {type(self.loss_func).__name__}')
+        plt.suptitle(f'Validation Accuracy per epoch 3DUnet with {type(self.loss_func).__name__}')
         plt.savefig(os.path.join(self.output_folder, 
-                    os.path.join('Loss', f'Train_oss_{self.epochs}_{type(self.loss_func).__name__}')))
+                    os.path.join('Accuracy', f'Val_Accuracy_{self.epochs}_{type(self.loss_func).__name__}')))
         plt.close()
-
         plt.plot(self.val_loss)
         plt.ylabel('Loss')
         plt.xlabel('Epochs')
@@ -192,10 +192,11 @@ class NetworkTrainer():
         np.savetxt(os.path.join(self.output_folder, 'Accuracy/Average_accuracy.csv'), [np.mean(self.accuracy)], 
                           delimiter=",", fmt='%s')
         plt.close()
+
     def get_accuracy_by_dice(self, output, target):
         smooth = 1e-5
         threshold = torch.tensor([0.5]).to(self.device)
-        inputs = (output[0][0]>threshold).float()
+        inputs = (output>threshold).float()
         inputs = inputs.view(-1)
         target = target.view(-1)
         intersection = (inputs*target).sum()
@@ -205,34 +206,38 @@ class NetworkTrainer():
     def validate(self, epoch):
         with torch.no_grad():
             val_loss = []
+            accuracy = []
             for i, image_set in enumerate(self.val_loader):
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
                 output = self.network(image)
                 loss = self.loss_func(output, label)
                 val_loss.append(loss.item())
+                if epoch % 10 == 0:
+                    accuracy.append(self.get_accuracy_by_dice(output, label))
                 if i == self.val_loader.get_data_length() - 1:
-                    self.save_slice_epoch(output, label, epoch)
+                    if epoch % 10 == 0:
+                        self.write_tofile('Accuracy/Val_Acc.csv', [np.mean(accuracy)])
+                        self.save_slice_epoch(output, label, epoch)
                     break
         self.val_loss.append(np.mean(val_loss))
 
     def test(self):
         with torch.no_grad():
-            test_loss = []
             for i, image_set in enumerate(self.test_loader):
                 image = image_set['data'].to(self.device)
                 label = image_set['seg'].to(self.device)
                 key = image_set['keys']
+                del image_set
                 output = self.network(image)
-                loss = self.loss_func(output, label)
-                test_loss.append(loss.item())
+                del image
                 self.save_test_nii(output, label, i, key)
                 accuracy_item = self.get_accuracy_by_dice(output, label)
+                del label
                 self.accuracy.append(accuracy_item)
                 if i == self.test_loader.get_data_length() - 1:
                     break
         self.create_accuracy_output()
-        self.test_loss.append(np.mean(test_loss))
         self.create_loss_output()
 
 
@@ -240,9 +245,9 @@ class NetworkTrainer():
         self.loss = []
         for epoch in range(self.epochs):
             loss_here = []
-            if epoch <= 20 and epoch % 2 == 0:
+            if epoch <= self.dialate_epochs and epoch % 2 == 0:
                 self.train_loader.UpdateDialPad(-1)
-            elif epoch == 20:
+            elif epoch == self.dialate_epochs:
                 self.train_loader.ToggleDialate(dialate = False)     
             for i, image_set in enumerate(self.train_loader):
                 image = image_set['data'].to(self.device)

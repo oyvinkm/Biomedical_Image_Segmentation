@@ -6,7 +6,7 @@ from Loss import (DiceLoss, WeightedTverskyLoss,
                   BinaryFocalLoss, FocalTversky, BCEWLLoss)
 from preprocessing.datasetModule import Set
 from preprocessing.DataAugmentation import (AddGaussianNoise, 
-AddRicianNoise, FlipTransform, ElasticDeform)
+AddRicianNoise, FlipTransform, AddNoise)
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
 import os
@@ -34,8 +34,13 @@ data_folders_2 = sorted([folder for folder  in os.listdir(dir_path) if
 train_1, test_1 = train_test_split(data_folders_1, test_size = 0.2, random_state=11)
 train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2, random_state=11)
 train = train_1 + train_2
-test = test_1 + test_2
+#test = test_1 + test_2
 train, val = train_test_split(train, train_size=0.8)
+test_path = os.path.join(os.getcwd(), data_folder)
+test = [folder for folder in os.listdir(test_path) if 
+         (os.path.join(test_path, folder)) if os.path.isdir(os.path.join(test_path, folder))
+         and folder not in (train + val)]
+test = np.random.choice(test, 6, False)
 #Text
 '''______________________________________________________________________________________________
                                             CHANGE VARIABLES HERE
@@ -49,12 +54,14 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = 13 #Number of batches before new epoch
-epochs = 300
+num_batches_per_epoch = 1 #Number of batches before new epoch
+epochs = 1
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 8 #Number of base features in 3D
-transform = transforms.Compose([AddGaussianNoise(p_per_sample = .4, p_per_channel = .4), FlipTransform(prob = .3)])
+gaussian = AddGaussianNoise(noise_variance=(3., 10.), p_per_sample = .2, p_per_channel = .4)
+rician = AddRicianNoise(noise_variance=(3., 10.), p_per_sample=.2)
+transform = transforms.Compose([AddNoise(rician, gaussian), FlipTransform(prob = .3)])
 learning_rate = 0.001
 dialation_prob = 0.6
 dialation_epochs = 50
@@ -90,14 +97,15 @@ model_kwargs = {'base_features': base_features, 'in_channels': 3,
 
 
 dir_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else os.path.join(os.getcwd(), f"{data_folder}/{alternate_folder}")
+dir_test_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else os.path.join(os.getcwd(), f"{data_folder}")
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_dir in folder])
-train, test = train_test_split(data_folders, test_size = 0.15)
-train, val = train_test_split(train, train_size=0.8)
+#train, test = train_test_split(data_folders, test_size = 0.15)
+#train, val = train_test_split(train, train_size=0.8)
 
 X_train = Set(dir_path, train, transform=transform)
-X_test = Set(dir_path, test)
+X_test = Set(dir_test_path, test)
 X_val = Set(dir_path, val)
 
 

@@ -65,7 +65,15 @@ class RotateRandomTransform(object):
             for d in range(s_shape[0]):
                 sample[self.seg_key][d] = rotate(sample[self.seg_key][d], self.angle,axes=(axis[0], axis[1]), reshape=self.reshape, order = 4)
             return sample
-
+class AddNoise(object):
+    def __init__(self, rician : AddRicianNoise, gaussian : AddGaussianNoise):
+        self.rician = rician
+        self.gaussian = gaussian
+    def __call__(self, sample):
+        if np.random.uniform() < .5:
+            return self.rician(sample)
+        else:
+            return self.gaussian(sample)
 class FlipTransform(object):
     def __init__(self, spatial_axis: Optional[Union[Sequence[int], int]] = None, data_key = 'data', seg_key = 'seg', prob : float = 1.) -> None:
         self.spatial_axis = spatial_axis
