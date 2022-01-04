@@ -39,7 +39,7 @@ train, val = train_test_split(train, train_size=0.8)
 test_path = os.path.join(os.getcwd(), data_folder)
 test = [folder for folder in os.listdir(test_path) if 
          (os.path.join(test_path, folder)) if os.path.isdir(os.path.join(test_path, folder))
-         and folder not in (train + val)]
+         and folder not in (train + val)]   
 test = np.random.choice(test, 6, False)
 #Text
 '''______________________________________________________________________________________________
@@ -54,8 +54,8 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = 1 #Number of batches before new epoch
-epochs = 1
+num_batches_per_epoch = 20 #Number of batches before new epoch
+epochs = 500
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 8 #Number of base features in 3D
@@ -101,8 +101,7 @@ dir_test_path = os.path.join(os.getcwd(), data_folder) if (os.name == 'nt') else
 data_folders = sorted([folder for folder  in os.listdir(dir_path) if 
                         os.path.isdir(os.path.join(dir_path, folder)) 
                         and sub_dir in folder])
-#train, test = train_test_split(data_folders, test_size = 0.15)
-#train, val = train_test_split(train, train_size=0.8)
+
 
 X_train = Set(dir_path, train, transform=transform)
 X_test = Set(dir_test_path, test)
