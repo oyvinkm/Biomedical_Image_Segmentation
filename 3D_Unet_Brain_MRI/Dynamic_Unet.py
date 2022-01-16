@@ -169,6 +169,8 @@ class Dynamic_3DUnet(nn.Module):
                                                         self.conv_kwargs, self.norm_op, self.norm_kwargs, 
                                                         self.dropout_op, self.dropout_kwargs, self.nonlin_op, 
                                                         basic_block= basic_block))
+                    self.conv_kwargs['kernel_size'] = 1
+                    self.conv_kwargs['padding'] = 0
                     self.conv = self.conv_op(out_features//2, 1, **self.conv_kwargs)
                     self.encoder_block.append(nn.Sequential(self.conv, self.final_nonlin_op))
         self.decode_path = nn.ModuleList(self.decoder_block)
@@ -179,15 +181,21 @@ class Dynamic_3DUnet(nn.Module):
         skips = []
         x = self.first_layer(x)
         for d in range(len(self.decode_path) - 1):
+            print('Before path: ', x.shape)
             x = self.decode_path[d](x)
+            print('After path: ',x.shape)
             skips.append(x)
             x = self.maxpool_op(x)
+            print('After max_pool: ', x.shape)
         x = self.decode_path[-1](x)
         for e in range(len(self.encode_path)):
             if e != len(self.encode_path) - 1:
+                print('Before upconv: ', x.shape)
                 x = self.upconv[e](x)
                 x = torch.cat((skips.pop(), x), dim=1)
+                print('After concat: ', x.shape)
             x = self.encode_path[e](x)
+            print('After encode path: ', x.shape)
         return x
 
         

@@ -34,13 +34,19 @@ data_folders_2 = sorted([folder for folder  in os.listdir(dir_path) if
 train_1, test_1 = train_test_split(data_folders_1, test_size = 0.2, random_state=11)
 train_2, test_2 = train_test_split(data_folders_2, test_size = 0.2, random_state=11)
 train = train_1 + train_2
-#test = test_1 + test_2
 train, val = train_test_split(train, train_size=0.8)
 test_path = os.path.join(os.getcwd(), data_folder)
 test = [folder for folder in os.listdir(test_path) if 
          (os.path.join(test_path, folder)) if os.path.isdir(os.path.join(test_path, folder))
          and folder not in (train + val)]   
-test = np.random.choice(test, 6, False)
+test = np.random.choice(test, 6, False).tolist()
+test = np.unique(test + test_1 + test_2)
+print(len(train))
+print(len(val))
+print(len(test_1))
+print(len(test_2))
+print(len(test))
+exit()
 #Text
 '''______________________________________________________________________________________________
                                             CHANGE VARIABLES HERE
@@ -54,8 +60,8 @@ optimizer = torch.optim.Adam
    'Exponential', 'Lambda' or 'ReducePlateau' or None : LinearLR'''
 scheduler = 'Lambda'
 batch_size = 2
-num_batches_per_epoch = 20 #Number of batches before new epoch
-epochs = 500
+num_batches_per_epoch = 1 #Number of batches before new epoch
+epochs = 1
 patch_size = (128, 128, 128)# Make sure that each value is divisible by 2**(num_pooling)
 in_channels = 3 #No need to change really
 base_features = 8 #Number of base features in 3D
@@ -90,7 +96,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 test_path_sub1 = cluster_path_sub1 if torch.cuda.is_available() else pc_path_sub1
 test_imgur_affine_sub1 = nib.load(test_path_sub1).affine
 model_kwargs = {'base_features': base_features, 'in_channels': 3,
-               'num_classes':1 , 'depth': 4, 'conv_kwargs': None, 'dropout_op': None,
+               'num_classes':1 , 'depth': 4, 'conv_kwargs': None, 'dropout_op': None, 'norm_op' : nn.InstanceNorm3d,
                'dropout_kwargs': None, 'nonlin_kwargs': None, 'maxpool_kwargs': None, 
                'basic_block' : ConvDropoutNormNonlin}
 
